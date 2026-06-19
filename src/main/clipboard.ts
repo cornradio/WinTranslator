@@ -20,8 +20,8 @@ export async function captureSelectedText(): Promise<string> {
     clipboard.writeText('');
     await sleep(20);
 
-    // Send Ctrl+C
-    await sendCtrlC();
+    // Send the platform copy shortcut
+    await sendCopyShortcut();
 
     // Wait for clipboard to update
     await waitForClipboardChange(600);
@@ -39,7 +39,16 @@ export async function captureSelectedText(): Promise<string> {
   return (selectedText && selectedText !== savedText) ? selectedText : '';
 }
 
-async function sendCtrlC(): Promise<void> {
+async function sendCopyShortcut(): Promise<void> {
+  if (process.platform === 'darwin') {
+    await sendMacCopy();
+    return;
+  }
+
+  await sendWindowsCopy();
+}
+
+async function sendWindowsCopy(): Promise<void> {
   // Primary: VBScript SendKeys via cscript.exe
   // cscript.exe starts in ~20ms vs PowerShell's ~300ms.
   // SendKeys sends Ctrl+C to the foreground window (the user's app).
@@ -78,6 +87,18 @@ async function sendCtrlC(): Promise<void> {
     console.log('[clipboard] nut-js OK');
   } catch (err) {
     console.error('[clipboard] All methods failed:', (err as Error).message);
+  }
+}
+
+async function sendMacCopy(): Promise<void> {
+  try {
+    const nutjs = await import('@nut-tree-fork/nut-js');
+    await nutjs.keyboard.pressKey(nutjs.Key.LeftSuper, nutjs.Key.C);
+    await sleep(30);
+    await nutjs.keyboard.releaseKey(nutjs.Key.LeftSuper, nutjs.Key.C);
+    console.log('[clipboard] nut-js Command+C OK');
+  } catch (err) {
+    console.error('[clipboard] macOS copy failed. Grant Accessibility permission if text capture does not work:', (err as Error).message);
   }
 }
 

@@ -1,6 +1,19 @@
 import { useState, useCallback } from 'react';
 import type { FunctionGroup, PromptTemplate } from '../../shared/types';
 
+const isMac = navigator.platform.toLowerCase().includes('mac');
+
+function formatHotkeyPart(part: string): string {
+  if (!isMac) return part;
+  if (part === 'Alt') return 'Option';
+  if (part === 'Command') return 'Command';
+  return part;
+}
+
+function formatHotkey(hotkey: string): string {
+  return hotkey.split('+').map(formatHotkeyPart).join('+');
+}
+
 interface FunctionsTabProps {
   functions: FunctionGroup[];
   onChange: (functions: FunctionGroup[]) => void;
@@ -76,7 +89,7 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
       if (e.ctrlKey) parts.push('Ctrl');
       if (e.altKey) parts.push('Alt');
       if (e.shiftKey) parts.push('Shift');
-      if (e.metaKey) parts.push('Super');
+      if (e.metaKey) parts.push(isMac ? 'Command' : 'Super');
       const key = e.key.toUpperCase();
       if (!['CONTROL', 'ALT', 'SHIFT', 'META'].includes(key)) {
         parts.push(key.length === 1 ? key : e.key);
@@ -120,7 +133,7 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
               <span>{f.icon}</span> {f.name}
             </div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
-              {f.hotkey || 'No hotkey'} \u00B7 {f.prompts.length} prompt{f.prompts.length !== 1 ? 's' : ''}
+              {f.hotkey ? formatHotkey(f.hotkey) : 'No hotkey'} \u00B7 {f.prompts.length} prompt{f.prompts.length !== 1 ? 's' : ''}
             </div>
           </div>
         ))}
@@ -164,7 +177,7 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
                   <span style={{ color: '#0a84ff', animation: 'pulse 1s infinite' }}>Press keys...</span>
                 ) : selected.hotkey ? (
                   selected.hotkey.split('+').map((k, i) => (
-                    <span key={i}>{i > 0 && <span style={{ color: 'rgba(255,255,255,0.4)' }}> + </span>}<kbd style={kbdStyle}>{k}</kbd></span>
+                    <span key={i}>{i > 0 && <span style={{ color: 'rgba(255,255,255,0.4)' }}> + </span>}<kbd style={kbdStyle}>{formatHotkeyPart(k)}</kbd></span>
                   ))
                 ) : (
                   <span style={{ color: 'rgba(255,255,255,0.35)' }}>Click to record</span>
