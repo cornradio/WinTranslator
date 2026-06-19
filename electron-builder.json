@@ -16,6 +16,11 @@
     ],
     "icon": "resources/icon.ico"
   },
+  "mac": {
+    "target": ["dmg", "zip"],
+    "icon": "resources/icon.icns",
+    "identity": null
+  },
   "nsis": {
     "oneClick": false,
     "perMachine": false,

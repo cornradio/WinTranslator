@@ -1,12 +1,13 @@
 {
   "name": "wintranslator",
   "version": "1.1.1",
-  "description": "Windows translation app with floating popup, global hotkeys, and LLM streaming",
+  "description": "Desktop translation app with floating popup, global hotkeys, and LLM streaming",
   "main": "dist-electron/main/index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:win": "vite build && electron-builder --win nsis portable --x64",
+    "build:mac": "vite build && electron-builder --mac dmg zip",
     "dist": "build-win.bat",
     "preview": "vite preview",
     "clean": "node -e \"['release','dist','dist-electron'].forEach(d=>require('fs').rmSync(d,{recursive:true,force:true}))\"",

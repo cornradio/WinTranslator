@@ -11,6 +11,11 @@ function getIconPath(): string {
   return path.join(__dirname, '../../resources/icon.png');
 }
 
+function formatHotkeyForMenu(hotkey: string): string {
+  if (process.platform !== 'darwin') return hotkey;
+  return hotkey.split('+').map((part) => (part === 'Alt' ? 'Option' : part)).join('+');
+}
+
 export function createTray(
   onGroup: (groupId: string) => void,
   onSettings: () => void,
@@ -41,7 +46,7 @@ export function rebuildTrayMenu(): void {
   // Dynamic function group entries
   for (const group of settings.functions) {
     if (!group.showInMenu) continue;
-    const hotkeyLabel = group.hotkey ? `  (${group.hotkey})` : '';
+    const hotkeyLabel = group.hotkey ? `  (${formatHotkeyForMenu(group.hotkey)})` : '';
     menuItems.push({
       label: `${group.icon} ${group.name}${hotkeyLabel}`,
       click: () => groupHandler?.(group.id),
