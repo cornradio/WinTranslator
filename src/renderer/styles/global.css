@@ -1,0 +1,153 @@
+:root {
+  --bg-glass: rgba(28, 28, 30, 0.82);
+  --bg-glass-light: rgba(44, 44, 46, 0.7);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-error: #ff6b6b;
+  --accent-blue: #0a84ff;
+  --accent-green: #30d158;
+  --accent-orange: #ff9f0a;
+  --accent-purple: #bf5af2;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+/* Popup window: transparent bg for glass effect (inline style in HTML sets this) */
+/* Settings window: #1c1c1e bg (inline style in HTML sets this) */
+
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.drag-handle {
+  -webkit-app-region: drag;
+  cursor: grab;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.fade-in { animation: fadeIn 0.2s ease-out; }
+
+::selection { background: rgba(10, 132, 255, 0.35); }
+
+/* Inputs */
+input, textarea, select {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 6px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input:focus, textarea:focus, select:focus { border-color: var(--accent-blue); }
+textarea { resize: vertical; }
+
+/* Buttons */
+button {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+button:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.18); }
+button:active { background: rgba(255,255,255,0.06); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+button.primary { background: var(--accent-blue); border-color: var(--accent-blue); color: white; }
+button.primary:hover { background: #0070e0; }
+button.danger { color: #ff453a; border-color: rgba(255,69,58,0.3); }
+button.danger:hover { background: rgba(255,69,58,0.15); }
+
+/* Markdown content */
+.markdown-content { line-height: 1.6; }
+.markdown-content p { margin: 0 0 8px 0; }
+.markdown-content p:last-child { margin-bottom: 0; }
+.markdown-content code {
+  background: rgba(255,255,255,0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.markdown-content pre {
+  background: rgba(255,255,255,0.06);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.markdown-content pre code { background: none; padding: 0; }
+.markdown-content ul, .markdown-content ol { padding-left: 20px; margin: 4px 0; }
+.markdown-content li { margin: 2px 0; }
+.markdown-content blockquote {
+  border-left: 3px solid var(--accent-blue);
+  padding-left: 10px;
+  color: var(--text-secondary);
+  margin: 6px 0;
+}
+.markdown-content strong { font-weight: 600; }
+.markdown-content a { color: var(--accent-blue); text-decoration: none; }
+.markdown-content a:hover { text-decoration: underline; }

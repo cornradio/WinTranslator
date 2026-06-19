@@ -1,0 +1,38 @@
+{
+  "name": "wintranslator",
+  "version": "1.0.0",
+  "description": "Windows translation app with floating popup, global hotkeys, and LLM streaming",
+  "main": "dist-electron/main/index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:win": "vite build && electron-builder --win nsis portable --x64",
+    "dist": "build-win.bat",
+    "preview": "vite preview",
+    "clean": "node -e \"['release','dist','dist-electron'].forEach(d=>require('fs').rmSync(d,{recursive:true,force:true}))\"",
+    "postinstall": "electron-builder install-app-deps",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nut-tree-fork/nut-js": "^4.2.6",
+    "koffi": "^3.0.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^36.4.0",
+    "electron-builder": "^25.1.8",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.35.1",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron-renderer": "^0.14.6"
+  }
+}

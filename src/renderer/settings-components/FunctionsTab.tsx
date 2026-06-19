@@ -1,0 +1,243 @@
+import { useState, useCallback } from 'react';
+import type { FunctionGroup, PromptTemplate } from '../../shared/types';
+
+interface FunctionsTabProps {
+  functions: FunctionGroup[];
+  onChange: (functions: FunctionGroup[]) => void;
+  onExport: () => void;
+  onImport: () => void;
+}
+
+export default function FunctionsTab({ functions, onChange, onExport, onImport }: FunctionsTabProps) {
+  const [selectedId, setSelectedId] = useState<string>(functions[0]?.id || '');
+
+  const selected = functions.find((f) => f.id === selectedId);
+
+  const updateGroup = useCallback((id: string, updates: Partial<FunctionGroup>) => {
+    onChange(functions.map((f) => (f.id === id ? { ...f, ...updates } : f)));
+  }, [functions, onChange]);
+
+  const addGroup = () => {
+    const newGroup: FunctionGroup = {
+      id: crypto.randomUUID(),
+      name: 'New Function',
+      icon: '\u{1F6E0}\u{FE0F}',
+      hotkey: '',
+      showInMenu: true,
+      prompts: [{
+        id: crypto.randomUUID(),
+        name: 'Prompt 1',
+        prompt: '{text}',
+        maxTokens: 512,
+      }],
+    };
+    onChange([...functions, newGroup]);
+    setSelectedId(newGroup.id);
+  };
+
+  const removeGroup = (id: string) => {
+    const next = functions.filter((f) => f.id !== id);
+    onChange(next);
+    if (selectedId === id) setSelectedId(next[0]?.id || '');
+  };
+
+  const addPrompt = (groupId: string) => {
+    const group = functions.find((f) => f.id === groupId);
+    if (!group) return;
+    const newPrompt: PromptTemplate = {
+      id: crypto.randomUUID(),
+      name: `Prompt ${group.prompts.length + 1}`,
+      prompt: '{text}',
+      maxTokens: 512,
+    };
+    updateGroup(groupId, { prompts: [...group.prompts, newPrompt] });
+  };
+
+  const updatePrompt = (groupId: string, promptId: string, updates: Partial<PromptTemplate>) => {
+    const group = functions.find((f) => f.id === groupId);
+    if (!group) return;
+    updateGroup(groupId, {
+      prompts: group.prompts.map((p) => (p.id === promptId ? { ...p, ...updates } : p)),
+    });
+  };
+
+  const removePrompt = (groupId: string, promptId: string) => {
+    const group = functions.find((f) => f.id === groupId);
+    if (!group || group.prompts.length <= 1) return;
+    updateGroup(groupId, { prompts: group.prompts.filter((p) => p.id !== promptId) });
+  };
+
+  // Hotkey recorder
+  const [recordingId, setRecordingId] = useState<string | null>(null);
+  const startRecording = useCallback((groupId: string) => {
+    setRecordingId(groupId);
+    const handler = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const parts: string[] = [];
+      if (e.ctrlKey) parts.push('Ctrl');
+      if (e.altKey) parts.push('Alt');
+      if (e.shiftKey) parts.push('Shift');
+      if (e.metaKey) parts.push('Super');
+      const key = e.key.toUpperCase();
+      if (!['CONTROL', 'ALT', 'SHIFT', 'META'].includes(key)) {
+        parts.push(key.length === 1 ? key : e.key);
+        updateGroup(groupId, { hotkey: parts.join('+') });
+        setRecordingId(null);
+        window.removeEventListener('keydown', handler, true);
+      }
+    };
+    window.addEventListener('keydown', handler, true);
+    setTimeout(() => { setRecordingId(null); window.removeEventListener('keydown', handler, true); }, 5000);
+  }, [updateGroup]);
+
+  const kbdStyle: React.CSSProperties = {
+    padding: '2px 6px', background: 'rgba(255,255,255,0.1)', borderRadius: 3,
+    border: '1px solid rgba(255,255,255,0.15)', fontSize: 11, fontFamily: 'var(--font-mono)',
+  };
+  const labelStyle: React.CSSProperties = {
+    fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.55)',
+    textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: 6, display: 'block',
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 16, height: '100%' }}>
+      {/* Left: function list */}
+      <div style={{ width: 180, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Functions ({functions.length})
+        </div>
+        {functions.map((f) => (
+          <div
+            key={f.id}
+            onClick={() => setSelectedId(f.id)}
+            style={{
+              padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+              background: f.id === selectedId ? 'rgba(255,255,255,0.08)' : 'transparent',
+              border: f.id === selectedId ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
+              transition: 'all 0.15s',
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>{f.icon}</span> {f.name}
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+              {f.hotkey || 'No hotkey'} \u00B7 {f.prompts.length} prompt{f.prompts.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+        ))}
+        <button onClick={addGroup} style={{ marginTop: 8, fontSize: 12 }}>+ Add Function</button>
+        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+          <button onClick={onExport} style={{ flex: 1, fontSize: 10, padding: '3px 0' }}>Export</button>
+          <button onClick={onImport} style={{ flex: 1, fontSize: 10, padding: '3px 0' }}>Import</button>
+        </div>
+      </div>
+
+      {/* Right: editor */}
+      {selected ? (
+        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Group name + icon */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <div>
+              <label style={labelStyle}>Icon</label>
+              <input type="text" value={selected.icon}
+                onChange={(e) => updateGroup(selected.id, { icon: e.target.value })}
+                style={{ width: 50, textAlign: 'center', fontSize: 18, padding: '4px' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>Name</label>
+              <input type="text" value={selected.name}
+                onChange={(e) => updateGroup(selected.id, { name: e.target.value })}
+                style={{ width: '100%' }} />
+            </div>
+          </div>
+
+          {/* Hotkey + menu toggle */}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+            <div>
+              <label style={labelStyle}>Hotkey</label>
+              <div onClick={() => startRecording(selected.id)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                background: recordingId === selected.id ? 'rgba(10,132,255,0.15)' : 'rgba(255,255,255,0.06)',
+                border: '1px solid ' + (recordingId === selected.id ? '#0a84ff' : 'rgba(255,255,255,0.12)'),
+                borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 12, minWidth: 100,
+              }}>
+                {recordingId === selected.id ? (
+                  <span style={{ color: '#0a84ff', animation: 'pulse 1s infinite' }}>Press keys...</span>
+                ) : selected.hotkey ? (
+                  selected.hotkey.split('+').map((k, i) => (
+                    <span key={i}>{i > 0 && <span style={{ color: 'rgba(255,255,255,0.4)' }}> + </span>}<kbd style={kbdStyle}>{k}</kbd></span>
+                  ))
+                ) : (
+                  <span style={{ color: 'rgba(255,255,255,0.35)' }}>Click to record</span>
+                )}
+              </div>
+              {selected.hotkey && (
+                <button onClick={() => updateGroup(selected.id, { hotkey: '' })}
+                  style={{ marginLeft: 6, fontSize: 10, padding: '2px 6px' }}>Clear</button>
+              )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div onClick={() => updateGroup(selected.id, { showInMenu: !selected.showInMenu })} style={{
+                width: 36, height: 20, borderRadius: 10, cursor: 'pointer', position: 'relative',
+                background: selected.showInMenu ? '#0a84ff' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s',
+              }}>
+                <div style={{
+                  width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2,
+                  left: selected.showInMenu ? 18 : 2, transition: 'left 0.2s',
+                }} />
+              </div>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Menu</span>
+            </div>
+            <button className="danger" onClick={() => removeGroup(selected.id)}
+              style={{ marginLeft: 'auto', fontSize: 11, padding: '4px 10px' }}>Delete</button>
+          </div>
+
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+            Tip: Multiple functions can share the same hotkey to run in parallel.
+          </div>
+
+          {/* Prompts */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <label style={{ ...labelStyle, marginBottom: 0 }}>Prompts ({selected.prompts.length})</label>
+              <button onClick={() => addPrompt(selected.id)} style={{ fontSize: 11, padding: '2px 8px' }}>+ Add Prompt</button>
+            </div>
+            {selected.prompts.map((p) => (
+              <div key={p.id} style={{
+                padding: 12, marginBottom: 8, background: 'rgba(255,255,255,0.03)',
+                borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+                  <input type="text" value={p.name}
+                    onChange={(e) => updatePrompt(selected.id, p.id, { name: e.target.value })}
+                    style={{ width: 150, fontWeight: 500 }} placeholder="Prompt name" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <label style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>Max tokens:</label>
+                    <input type="number" value={p.maxTokens} min={64} max={4096} step={64}
+                      onChange={(e) => updatePrompt(selected.id, p.id, { maxTokens: Number(e.target.value) })}
+                      style={{ width: 70, fontSize: 11, padding: '3px 6px' }} />
+                  </div>
+                  {selected.prompts.length > 1 && (
+                    <button className="danger" onClick={() => removePrompt(selected.id, p.id)}
+                      style={{ marginLeft: 'auto', fontSize: 10, padding: '2px 6px' }}>Remove</button>
+                  )}
+                </div>
+                <textarea value={p.prompt}
+                  onChange={(e) => updatePrompt(selected.id, p.id, { prompt: e.target.value })}
+                  rows={4} style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.5, resize: 'vertical' }} />
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
+                  Use {'{text}'} as placeholder for selected text
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.3)' }}>
+          Select a function or create a new one
+        </div>
+      )}
+    </div>
+  );
+}
