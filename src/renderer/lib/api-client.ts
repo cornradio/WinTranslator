@@ -8,6 +8,7 @@ interface StreamOptions {
   systemPrompt: string;
   userText: string;
   maxTokens?: number;
+  thinking?: boolean;
   onChunk: (text: string) => void;
   onDone: () => void;
   onError: (error: string) => void;
@@ -26,7 +27,7 @@ export function streamLLM(options: StreamOptions): AbortController {
 }
 
 async function streamAnthropic(options: StreamOptions, signal: AbortSignal): Promise<void> {
-  const { apiKey, model, baseUrl, systemPrompt, userText, maxTokens = 1024, onChunk, onDone, onError } = options;
+  const { apiKey, model, baseUrl, systemPrompt, userText, maxTokens = 4096, onChunk, onDone, onError } = options;
 
   try {
     const response = await fetch(`${baseUrl}/v1/messages`, {
@@ -61,24 +62,34 @@ async function streamAnthropic(options: StreamOptions, signal: AbortSignal): Pro
 }
 
 async function streamOpenAI(options: StreamOptions, signal: AbortSignal): Promise<void> {
-  const { apiKey, model, baseUrl, systemPrompt, userText, maxTokens = 1024, onChunk, onDone, onError } = options;
+  const { apiKey, model, baseUrl, systemPrompt, userText, maxTokens = 4096, thinking = false, onChunk, onDone, onError } = options;
 
   try {
+    const body: Record<string, unknown> = {
+      model,
+      stream: true,
+      max_tokens: maxTokens,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userText },
+      ],
+    };
+
+    // DeepSeek thinking mode: only send for DeepSeek API
+    if (baseUrl.toLowerCase().includes('deepseek')) {
+      body.thinking = { type: thinking ? 'enabled' : 'disabled' };
+      if (thinking) {
+        body.reasoning_effort = 'high';
+      }
+    }
+
     const response = await fetch(`${baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model,
-        stream: true,
-        max_tokens: maxTokens,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userText },
-        ],
-      }),
+      body: JSON.stringify(body),
       signal,
     });
 
@@ -109,7 +120,23 @@ async function parseAnthropicSSE(
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        // Flush remaining buffer content before finishing
+        if (buffer.trim()) {
+          const trimmed = buffer.trim();
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(trimmed.slice(6));
+              if (data.type === 'content_block_delta' && data.delta?.text) {
+                onChunk(data.delta.text);
+              }
+            } catch {
+              // Skip malformed JSON in final buffer
+            }
+          }
+        }
+        break;
+      }
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');
@@ -155,7 +182,25 @@ async function parseOpenAIsSE(
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        // Flush remaining buffer content before finishing
+        if (buffer.trim()) {
+          const trimmed = buffer.trim();
+          if (trimmed.startsWith('data: ')) {
+            const data = trimmed.slice(6);
+            if (data !== '[DONE]') {
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) onChunk(content);
+              } catch {
+                // Skip malformed JSON in final buffer
+              }
+            }
+          }
+        }
+        break;
+      }
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split('\n');

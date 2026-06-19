@@ -28,7 +28,6 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
         id: crypto.randomUUID(),
         name: 'Prompt 1',
         prompt: '{text}',
-        maxTokens: 512,
       }],
     };
     onChange([...functions, newGroup]);
@@ -48,7 +47,6 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
       id: crypto.randomUUID(),
       name: `Prompt ${group.prompts.length + 1}`,
       prompt: '{text}',
-      maxTokens: 512,
     };
     updateGroup(groupId, { prompts: [...group.prompts, newPrompt] });
   };
@@ -211,13 +209,7 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
                   <input type="text" value={p.name}
                     onChange={(e) => updatePrompt(selected.id, p.id, { name: e.target.value })}
-                    style={{ width: 150, fontWeight: 500 }} placeholder="Prompt name" />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <label style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>Max tokens:</label>
-                    <input type="number" value={p.maxTokens} min={64} max={4096} step={64}
-                      onChange={(e) => updatePrompt(selected.id, p.id, { maxTokens: Number(e.target.value) })}
-                      style={{ width: 70, fontSize: 11, padding: '3px 6px' }} />
-                  </div>
+                    style={{ flex: 1, fontWeight: 500 }} placeholder="Prompt name" />
                   {selected.prompts.length > 1 && (
                     <button className="danger" onClick={() => removePrompt(selected.id, p.id)}
                       style={{ marginLeft: 'auto', fontSize: 10, padding: '2px 6px' }}>Remove</button>

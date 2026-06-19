@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import { IPC } from '../shared/ipc-channels';
 import {
   getSettings,
@@ -54,6 +54,10 @@ export function registerIpcHandlers(): void {
       const newHeight = Math.min(Math.max(height, 120), 500);
       win.setSize(480, newHeight, false);
     }
+  });
+
+  ipcMain.handle(IPC.OPEN_URL, (_event, url: string) => {
+    shell.openExternal(url);
   });
 
   // Settings window

@@ -1,6 +1,6 @@
 {
   "name": "wintranslator",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "Windows translation app with floating popup, global hotkeys, and LLM streaming",
   "main": "dist-electron/main/index.js",
   "scripts": {

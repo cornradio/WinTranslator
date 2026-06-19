@@ -4,7 +4,6 @@ export interface PromptTemplate {
   id: string;           // crypto.randomUUID()
   name: string;         // "Translate", "Concise", "Polished"
   prompt: string;       // prompt text, {text} = selected text placeholder
-  maxTokens: number;    // LLM output limit
 }
 
 export interface FunctionGroup {
@@ -22,6 +21,7 @@ export interface TranslationEntry {
   sourceText: string;
   resultText: string;
   groupName?: string;
+  groupIcon?: string;
   promptName?: string;
 }
 
@@ -38,6 +38,8 @@ export interface AISettings {
   apiKey: string;
   model: string;
   baseUrl: string;
+  maxTokens: number;
+  thinking: boolean;
 }
 
 export type Theme = 'dark' | 'monokai' | 'paper' | 'light';
@@ -73,7 +75,9 @@ export interface ElectronAPI {
     resize(height: number): Promise<void>;
     hide(): Promise<void>;
     startDrag(): Promise<void>;
+    openUrl(url: string): Promise<void>;
     onShowText(callback: (data: { text: string; groupId: string }) => void): () => void;
+    onShowHistory(callback: () => void): () => void;
     onDismissTimer(callback: (data: { ms: number }) => void): () => void;
   };
   history: {

@@ -11,7 +11,7 @@ export function useAutoResize(deps: unknown[]): void {
     const root = document.getElementById('content-root');
     if (!root) return;
 
-    const height = root.scrollHeight + 2; // +2 for border
+    const height = root.scrollHeight + 16;
     window.electronAPI?.popup.resize(height);
   }, []);
 

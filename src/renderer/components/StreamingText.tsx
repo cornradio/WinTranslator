@@ -9,7 +9,7 @@ interface StreamingTextProps {
 export default function StreamingText({ text, isStreaming }: StreamingTextProps) {
   return (
     <div style={{
-      fontSize: '13px',
+      fontSize: '1em',
       lineHeight: '1.6',
       wordBreak: 'break-word',
       color: 'var(--text-primary)',
@@ -21,7 +21,7 @@ export default function StreamingText({ text, isStreaming }: StreamingTextProps)
         <span style={{
           display: 'inline-block',
           width: '2px',
-          height: '14px',
+          height: '1em',
           background: 'var(--accent-blue)',
           animation: 'pulse 0.8s infinite',
           verticalAlign: 'text-bottom',

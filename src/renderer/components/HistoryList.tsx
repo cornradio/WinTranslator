@@ -1,24 +1,42 @@
 import { useState, useEffect } from 'react';
-import type { TranslationEntry } from '../../shared/types';
+import type { TranslationEntry, FunctionGroup } from '../../shared/types';
 import CopyButton from './CopyButton';
 
-export default function HistoryList() {
+interface HistoryListProps {
+  functions?: FunctionGroup[];
+  onLoad?: () => void;
+}
+
+export default function HistoryList({ functions, onLoad }: HistoryListProps) {
   const [entries, setEntries] = useState<TranslationEntry[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Build icon lookup: groupName -> icon
+  const iconMap = new Map<string, string>();
+  if (functions) {
+    for (const g of functions) {
+      iconMap.set(g.name, g.icon);
+    }
+  }
+
+  const getIcon = (entry: TranslationEntry) =>
+    entry.groupIcon || (entry.groupName ? iconMap.get(entry.groupName) : undefined);
 
   useEffect(() => {
     window.electronAPI?.history.getAll().then((data) => {
       setEntries(data);
       setLoading(false);
+      onLoad?.();
     });
 
     const unsub = window.electronAPI?.history.onUpdated((data) => {
       setEntries(data);
+      onLoad?.();
     });
 
     return () => unsub?.();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async (id: string) => {
     await window.electronAPI?.history.delete(id);
@@ -58,15 +76,13 @@ export default function HistoryList() {
       {/* Entries */}
       {entries.length === 0 ? (
         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0', fontSize: '12px' }}>
-          🕐 No history yet
+          No history yet
         </div>
       ) : (
         <div style={{
           display: 'flex',
           flexDirection: 'column',
           gap: '4px',
-          maxHeight: '300px',
-          overflowY: 'auto',
         }}>
           {entries.map((entry) => (
             <div key={entry.id}>
@@ -82,9 +98,7 @@ export default function HistoryList() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                  <span style={{ fontSize: '12px' }}>
-                    {'⚡'}
-                  </span>
+                  {getIcon(entry) && <span style={{ fontSize: '12px' }}>{getIcon(entry)}</span>}
                   <span style={{
                     fontSize: '10px',
                     color: 'var(--text-secondary)',

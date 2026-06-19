@@ -14,10 +14,16 @@ const electronAPI: ElectronAPI = {
     resize: (height: number) => ipcRenderer.invoke(IPC.POPUP_RESIZE, height),
     hide: () => ipcRenderer.invoke(IPC.POPUP_HIDE),
     startDrag: () => ipcRenderer.invoke(IPC.POPUP_START_DRAG),
+    openUrl: (url: string) => ipcRenderer.invoke(IPC.OPEN_URL, url),
     onShowText: (callback: (data: { text: string; groupId: string }) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, data: { text: string; groupId: string }) => callback(data);
       ipcRenderer.on(IPC.POPUP_SHOW_TEXT, handler);
       return () => ipcRenderer.removeListener(IPC.POPUP_SHOW_TEXT, handler);
+    },
+    onShowHistory: (callback: () => void) => {
+      const handler = () => callback();
+      ipcRenderer.on(IPC.POPUP_SHOW_HISTORY, handler);
+      return () => ipcRenderer.removeListener(IPC.POPUP_SHOW_HISTORY, handler);
     },
     onDismissTimer: (callback: (data: { ms: number }) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, data: { ms: number }) => callback(data);

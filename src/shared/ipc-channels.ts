@@ -14,9 +14,11 @@ export const IPC = {
   HISTORY_DELETE: 'history:delete',
   HISTORY_CLEAR: 'history:clear',
   CLIPBOARD_CAPTURE: 'clipboard:capture',
+  OPEN_URL: 'shell:open-url',
 
   // Main -> Renderer (send/on)
   POPUP_SHOW_TEXT: 'popup:show-text',
+  POPUP_SHOW_HISTORY: 'popup:show-history',
   POPUP_DISMISS_TIMER: 'popup:dismiss-timer',
   SETTINGS_UPDATED: 'settings:updated',
   HISTORY_UPDATED: 'history:updated',

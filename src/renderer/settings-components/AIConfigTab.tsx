@@ -113,6 +113,47 @@ export default function AIConfigTab({ settings, onChange }: AIConfigTabProps) {
         />
       </Field>
 
+      <Field label="Max Output Tokens">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            type="range"
+            min={256}
+            max={16384}
+            step={256}
+            value={settings.maxTokens}
+            onChange={(e) => onChange({ ...settings, maxTokens: Number(e.target.value) })}
+            style={{ flex: 1 }}
+          />
+          <input
+            type="number"
+            value={settings.maxTokens}
+            min={256}
+            max={16384}
+            step={256}
+            onChange={(e) => onChange({ ...settings, maxTokens: Number(e.target.value) })}
+            style={{ width: 80, textAlign: 'center' }}
+          />
+        </div>
+      </Field>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div
+          onClick={() => onChange({ ...settings, thinking: !settings.thinking })}
+          style={{
+            width: 36, height: 20, borderRadius: 10, cursor: 'pointer', position: 'relative', flexShrink: 0,
+            background: settings.thinking ? 'var(--accent-blue)' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s',
+          }}>
+          <div style={{
+            width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2,
+            left: settings.thinking ? 18 : 2, transition: 'left 0.2s',
+          }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 2 }}>Thinking Mode</div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>DeepSeek reasoning chain (slower, higher cost)</div>
+        </div>
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button onClick={handleTest} disabled={testing || !settings.apiKey}>
           {testing ? 'Testing...' : 'Test Connection'}

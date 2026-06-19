@@ -18,11 +18,14 @@ export default function PopupApp() {
   const [groupIcon, setGroupIcon] = useState('');
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [showHistory, setShowHistory] = useState(false);
+  const [historyVersion, setHistoryVersion] = useState(0);
   const [isDragging] = useState(false);
   const [waitingForText, setWaitingForText] = useState(false);
   const [results, setResults] = useState<FunctionResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const abortControllersRef = useRef<AbortController[]>([]);
+  const [chatMenuOpen, setChatMenuOpen] = useState(false);
+  const chatMenuRef = useRef<HTMLDivElement>(null);
 
   const isStreaming = results.some((r) => r.isStreaming);
 
@@ -80,7 +83,18 @@ export default function PopupApp() {
       // Start parallel streaming for all prompts in this group
       startAllPrompts(data.text, group);
     });
-    return () => unsub();
+
+    const unsubHistory = api.popup.onShowHistory(() => {
+      abortControllersRef.current.forEach((c) => c.abort());
+      abortControllersRef.current = [];
+      setError(null);
+      setSourceText('');
+      setResults([]);
+      setWaitingForText(false);
+      setShowHistory(true);
+    });
+
+    return () => { unsub(); unsubHistory(); };
   }, [settings.functions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startAllPrompts = useCallback(
@@ -106,7 +120,8 @@ export default function PopupApp() {
           baseUrl: settings.ai.baseUrl,
           systemPrompt: '',
           userText,
-          maxTokens: prompt.maxTokens,
+          maxTokens: settings.ai.maxTokens,
+          thinking: settings.ai.thinking,
           onChunk: (chunk) => {
             accumulated += chunk;
             setResults((prev) => {
@@ -127,6 +142,7 @@ export default function PopupApp() {
               sourceText: text,
               resultText: accumulated,
               groupName: group.name,
+              groupIcon: group.icon,
               promptName: prompt.name,
             });
           },
@@ -145,7 +161,7 @@ export default function PopupApp() {
     [settings.ai]
   );
 
-  useAutoResize([results, showHistory, error]);
+  useAutoResize([results, showHistory, error, historyVersion]);
 
   useAutoDismiss({
     seconds: settings.popup.autoDismissSeconds,
@@ -159,6 +175,44 @@ export default function PopupApp() {
     api?.popup.hide();
   };
 
+  const chatServices = [
+    { name: 'Claude', url: 'https://claude.ai/new' },
+    { name: 'ChatGPT', url: 'https://chatgpt.com/' },
+    { name: 'Gemini', url: 'https://gemini.google.com/app' },
+    { name: 'Grok', url: 'https://x.com/i/grok' },
+    { name: 'DeepSeek', url: 'https://chat.deepseek.com/' },
+    { name: '\u8C46\u5305', url: 'https://www.doubao.com/chat/' },
+    { name: '\u901A\u4E49\u5343\u95EE', url: 'https://www.qianwen.com/' },
+  ];
+
+  const handleChat = async (url: string) => {
+    const parts: string[] = [];
+    if (sourceText) parts.push(`[Source]\n${sourceText}`);
+    results.forEach((r) => {
+      if (r.text) {
+        parts.push(results.length > 1 ? `[${r.promptName}]\n${r.text}` : `[Result]\n${r.text}`);
+      }
+    });
+    const context = parts.join('\n\n');
+    if (context) {
+      await navigator.clipboard.writeText(context);
+    }
+    api?.popup.openUrl(url);
+    setChatMenuOpen(false);
+  };
+
+  // Close chat menu on outside click
+  useEffect(() => {
+    if (!chatMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (chatMenuRef.current && !chatMenuRef.current.contains(e.target as Node)) {
+        setChatMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [chatMenuOpen]);
+
   // Theme
   const ap = settings.appearance;
   const isDark = isThemeDark(ap.theme);
@@ -171,7 +225,6 @@ export default function PopupApp() {
     background: getThemeBg(ap.theme, ap.opacity),
     border: `${ap.borderWidth}px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'}`,
     borderRadius: `${ap.borderRadius}px`,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.15)',
     color: isDark ? (isMonokai ? '#f8f8f2' : 'rgba(255,255,255,0.92)') : 'rgba(0,0,0,0.85)',
     ['--text-primary' as string]: isDark ? (isMonokai ? '#f8f8f2' : 'rgba(255,255,255,0.92)') : 'rgba(0,0,0,0.85)',
     ['--text-secondary' as string]: isMonokai ? '#a6e22e' : isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
@@ -190,16 +243,51 @@ export default function PopupApp() {
         marginBottom: '8px', padding: '2px 0',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontSize: '14px' }}>{groupIcon || '\u{1F310}'}</span>
-          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {groupName || 'Translate'}
-          </span>
-          {(isStreaming || waitingForText) && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-blue)', animation: 'pulse 1.2s infinite', display: 'inline-block' }} />}
+          {showHistory ? (
+            <>
+              <span style={{ fontSize: '14px' }}>{'\u{1F4CB}'}</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>History</span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: '14px' }}>{groupIcon || '\u{1F310}'}</span>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {groupName || 'Translate'}
+              </span>
+            </>
+          )}
+          {!showHistory && (isStreaming || waitingForText) && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-blue)', animation: 'pulse 1.2s infinite', display: 'inline-block' }} />}
         </div>
-        <div className="no-drag" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="no-drag" style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
+          {!showHistory && results.some((r) => r.text) && (
+            <div ref={chatMenuRef} style={{ position: 'relative' }}>
+              <button className="no-drag" onClick={() => setChatMenuOpen(!chatMenuOpen)}
+                style={{ background: 'none', border: 'none', padding: '2px 6px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>Chat</button>
+              {chatMenuOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, zIndex: 100,
+                  background: isDark ? 'rgba(40,40,44,0.98)' : 'rgba(255,255,255,0.98)',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'}`,
+                  borderRadius: 8, padding: '4px 0', minWidth: 140,
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                }}>
+                  {chatServices.map((s) => (
+                    <div key={s.name} onClick={() => handleChat(s.url)}
+                      style={{
+                        padding: '6px 14px', fontSize: 12, cursor: 'pointer',
+                        color: isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      {s.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {!showHistory && results.length === 1 && results[0].text && <CopyButton text={results[0].text} />}
-          <button className="no-drag" onClick={() => setShowHistory(!showHistory)}
-            style={{ background: 'none', border: 'none', padding: '2px 6px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>History</button>
           <button className="no-drag" onClick={handleHide}
             style={{ background: 'none', border: 'none', padding: '2px 6px', fontSize: 14, color: 'var(--text-secondary)', cursor: 'pointer' }}>{'\u00D7'}</button>
         </div>
@@ -239,8 +327,12 @@ export default function PopupApp() {
                 </div>
               )}
               <div style={{ userSelect: 'text' }}>
-                {result.isError ? <span style={{ color: 'var(--text-error)', fontSize: 12 }}>Error</span>
-                  : result.text ? <StreamingText text={result.text} isStreaming={result.isStreaming} />
+                {result.isError && !result.text
+                  ? <span style={{ color: 'var(--text-error)', fontSize: 12 }}>Error</span>
+                  : result.text ? <>
+                      <StreamingText text={result.text} isStreaming={result.isStreaming} />
+                      {result.isError && <span style={{ color: 'var(--text-error)', fontSize: 10, display: 'block', marginTop: 4 }}>Output may be incomplete</span>}
+                    </>
                   : !error && <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: 12 }}>Thinking...</div>}
               </div>
               {idx < results.length - 1 && <div style={{ height: 1, background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)', marginTop: 10 }} />}
@@ -249,7 +341,7 @@ export default function PopupApp() {
         </div>
       )}
 
-      {showHistory && <HistoryList />}
+      {showHistory && <HistoryList functions={settings.functions} onLoad={() => setHistoryVersion((v) => v + 1)} />}
 
       {/* Empty state */}
       {!sourceText && !showHistory && !waitingForText && results.length === 0 && (
@@ -257,13 +349,6 @@ export default function PopupApp() {
           Select text and press a hotkey to translate
         </div>
       )}
-
-      {/* Resize grip */}
-      <div style={{
-        position: 'absolute', bottom: 0, right: 0, width: 16, height: 16, cursor: 'nwse-resize', opacity: 0.3,
-        background: `linear-gradient(135deg, transparent 50%, ${isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)'} 50%)`,
-        borderRadius: `0 0 ${ap.borderRadius}px 0`,
-      }} />
     </div>
   );
 }

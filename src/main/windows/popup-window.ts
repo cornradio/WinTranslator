@@ -98,6 +98,32 @@ export function showPopupAtCursor(text: string, groupId: string): void {
   }
 }
 
+export function showPopupForHistory(): void {
+  const win = createPopupWindow();
+  if (!win || win.isDestroyed()) return;
+
+  const display = screen.getPrimaryDisplay();
+  const { width: workW, height: workH } = display.workArea;
+  const x = Math.round(workW / 2 - POPUP_WIDTH / 2);
+  const y = Math.round(workH / 2 - 200);
+
+  win.setSize(POPUP_WIDTH, POPUP_MAX_HEIGHT, false);
+  win.setPosition(Math.max(0, x), Math.max(0, y));
+  win.show();
+
+  const sendHistory = () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send(IPC.POPUP_SHOW_HISTORY);
+    }
+  };
+
+  if (win.webContents.isLoading()) {
+    win.webContents.once('did-finish-load', () => setTimeout(sendHistory, 50));
+  } else {
+    setTimeout(sendHistory, 50);
+  }
+}
+
 export function hidePopup(): void {
   if (!popupWindow || popupWindow.isDestroyed()) return;
   console.log('[popup] Hiding');

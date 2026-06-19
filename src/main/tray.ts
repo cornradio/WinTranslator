@@ -5,6 +5,7 @@ import { getSettings } from './store';
 let tray: Tray | null = null;
 let groupHandler: ((groupId: string) => void) | null = null;
 let settingsHandler: (() => void) | null = null;
+let historyHandler: (() => void) | null = null;
 
 function getIconPath(): string {
   return path.join(__dirname, '../../resources/icon.png');
@@ -13,9 +14,11 @@ function getIconPath(): string {
 export function createTray(
   onGroup: (groupId: string) => void,
   onSettings: () => void,
+  onHistory: () => void,
 ): Tray {
   groupHandler = onGroup;
   settingsHandler = onSettings;
+  historyHandler = onHistory;
 
   const iconPath = getIconPath();
   const icon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
@@ -47,6 +50,7 @@ export function rebuildTrayMenu(): void {
 
   menuItems.push(
     { type: 'separator' },
+    { label: 'History', click: () => historyHandler?.() },
     { label: 'Settings...', click: () => settingsHandler?.() },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },

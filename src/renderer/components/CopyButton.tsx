@@ -42,7 +42,7 @@ export default function CopyButton({ text }: CopyButtonProps) {
         transition: 'color 0.15s',
       }}
     >
-      {copied ? '✓ Copied' : '📋 Copy'}
+      {copied ? 'Copied' : 'Copy'}
     </button>
   );
 }

@@ -2,7 +2,7 @@ import { app, clipboard } from 'electron';
 import { createTray, destroyTray } from './tray';
 import { registerAllHotkeys, unregisterAllHotkeys, setGroupHandler } from './hotkeys';
 import { captureSelectedText } from './clipboard';
-import { createPopupWindow, showPopupAtCursor, togglePopup, isPopupVisible } from './windows/popup-window';
+import { createPopupWindow, showPopupAtCursor, showPopupForHistory, togglePopup, isPopupVisible } from './windows/popup-window';
 import { createSettingsWindow } from './windows/settings-window';
 import { registerIpcHandlers } from './ipc-handlers';
 
@@ -54,6 +54,7 @@ app.whenReady().then(() => {
   createTray(
     (groupId) => handleGroupAction(groupId),
     () => createSettingsWindow(),
+    () => showPopupForHistory(),
   );
 
   console.log('[WinTranslator] Initialized');
