@@ -6,9 +6,19 @@ interface AIConfigTabProps {
   onChange: (settings: AISettings) => void;
 }
 
+interface BalanceInfo {
+  currency: string;
+  total_balance: string;
+  granted_balance: string;
+  topped_up_balance: string;
+}
+
 export default function AIConfigTab({ settings, onChange }: AIConfigTabProps) {
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
+  const [checkingBalance, setCheckingBalance] = useState(false);
+  const [balanceData, setBalanceData] = useState<BalanceInfo[] | null>(null);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
 
   const handleChange = (key: keyof AISettings, value: string) => {
     onChange({ ...settings, [key]: value });
@@ -50,6 +60,36 @@ export default function AIConfigTab({ settings, onChange }: AIConfigTabProps) {
       setTestResult('Failed: ' + (err as Error).message);
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleCheckBalance = async () => {
+    setCheckingBalance(true);
+    setBalanceData(null);
+    setBalanceError(null);
+    try {
+      if (settings.provider === 'anthropic') {
+        setBalanceError('Anthropic does not expose a balance API. Check console.anthropic.com.');
+        return;
+      }
+      const res = await fetch(`${settings.baseUrl}/user/balance`, {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + settings.apiKey },
+      });
+      if (!res.ok) {
+        setBalanceError(`Not supported (${res.status}). Check your provider's dashboard.`);
+        return;
+      }
+      const data = await res.json();
+      if (data.balance_infos?.length) {
+        setBalanceData(data.balance_infos);
+      } else {
+        setBalanceError('Unexpected response format.');
+      }
+    } catch (err) {
+      setBalanceError('Failed: ' + (err as Error).message);
+    } finally {
+      setCheckingBalance(false);
     }
   };
 
@@ -165,6 +205,52 @@ export default function AIConfigTab({ settings, onChange }: AIConfigTabProps) {
           }}>
             {testResult}
           </span>
+        )}
+      </div>
+
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button onClick={handleCheckBalance} disabled={checkingBalance || !settings.apiKey}>
+            {checkingBalance ? 'Checking...' : 'Check Balance'}
+          </button>
+          {settings.baseUrl.toLowerCase().includes('deepseek') && (
+            <button onClick={() => window.electronAPI?.popup.openUrl('https://platform.deepseek.com/usage')}>
+              Check Online
+            </button>
+          )}
+        </div>
+        {balanceError && (
+          <div style={{ fontSize: '12px', color: 'var(--text-error)', marginTop: '8px' }}>
+            {balanceError}
+          </div>
+        )}
+        {balanceData && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+            {balanceData.map((info, i) => (
+              <div key={i} style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '10px 14px',
+              }}>
+                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '8px' }}>
+                  {info.currency}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Total</span>
+                  <span style={{ fontWeight: 500 }}>{Number(info.total_balance).toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '2px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Granted</span>
+                  <span>{Number(info.granted_balance).toFixed(2)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Topped Up</span>
+                  <span>{Number(info.topped_up_balance).toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

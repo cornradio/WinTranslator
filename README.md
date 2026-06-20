@@ -45,9 +45,9 @@ npm run build:mac
 
 弹窗会在鼠标位置弹出来，翻译完可以点复制按钮。如果没选中文字，会自动翻译剪贴板里的内容。
 
-![alt text](image_6ufy1j.png)
+![alt text](readme-image/image_6ufy1j.png)
 
-![alt text](clipboard_1781845960.jpg)
+![alt text](readme-image/clipboard_1781845960.jpg)
 
 ## 配置 API Key
 
@@ -71,7 +71,7 @@ npm run build:mac
 
 点 **Test Connection**，显示成功就可以用了。
 
-![alt text](clipboard_1781845878.jpg)
+![alt text](readme-image/clipboard_1781845878.jpg)
 
 
 
@@ -80,3 +80,5 @@ npm run build:mac
 Settings → **Functions** 标签页可以：修改快捷键、编辑翻译提示词、新增自己的功能组。提示词里用 `{text}` 代表选中的文字。
 
 Settings → **Appearance** 标签页可以：换主题、调透明度、改圆角大小、设置自动消失时间。
+
+参考 [functions.md](functions.md) 里的示例.
