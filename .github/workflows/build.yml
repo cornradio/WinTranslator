@@ -44,7 +44,7 @@ jobs:
 
       - name: Build Windows packages
         if: matrix.platform == 'win'
-        run: npx electron-builder --win nsis portable --x64
+        run: npx electron-builder --win nsis --x64
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
