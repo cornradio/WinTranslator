@@ -1,7 +1,9 @@
 # WinTranslator
 
-选中文字，按快捷键，弹窗直接出翻译结果。
+选中文字，按快捷键，弹窗直接出翻译结果。  
 支持自定义prompt和快捷键，根据自己的需求设置不同的AI分析组合（不只局限于翻译领域）。
+
+bilibili视频教程 https://www.bilibili.com/video/BV1xnji6pEzj
 
 ## 安装 / 运行
 
