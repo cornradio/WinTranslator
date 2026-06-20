@@ -1,5 +1,7 @@
 # WinTranslator
 
+<img width="1840" height="984" alt="image" src="https://github.com/user-attachments/assets/42d5e6c5-22df-41ad-8075-f016538be8e6" />
+
 选中文字，按快捷键，弹窗直接出翻译结果。  
 支持自定义prompt和快捷键，根据自己的需求设置不同的AI分析组合（不只局限于翻译领域）。
 
