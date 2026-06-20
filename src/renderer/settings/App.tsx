@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import type { AppSettings } from '../../shared/types';
-import { DEFAULT_SETTINGS, APP_VERSION, GITHUB_RELEASES_URL, GITHUB_API_LATEST_RELEASE } from '../../shared/constants';
+import { DEFAULT_SETTINGS } from '../../shared/constants';
 import AIConfigTab from '../settings-components/AIConfigTab';
 import FunctionsTab from '../settings-components/FunctionsTab';
 import AppearanceTab from '../settings-components/AppearanceTab';
+import GeneralTab from '../settings-components/GeneralTab';
 
-type Tab = 'ai' | 'functions' | 'appearance';
+type Tab = 'ai' | 'functions' | 'appearance' | 'general';
 
 const api = window.electronAPI;
 
@@ -14,8 +15,6 @@ export default function SettingsApp() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [dirty, setDirty] = useState(false);
   const [ready, setReady] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     if (!api) { setReady(true); return; }
@@ -75,33 +74,11 @@ export default function SettingsApp() {
     input.click();
   };
 
-  const checkForUpdates = async () => {
-    setChecking(true);
-    setUpdateStatus(null);
-    try {
-      const res = await fetch(GITHUB_API_LATEST_RELEASE);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const latest = (data.tag_name || '').replace(/^v/, '');
-      const current = APP_VERSION;
-      if (!latest) {
-        setUpdateStatus('Unable to parse latest version');
-      } else if (latest > current) {
-        setUpdateStatus(`New version available: v${latest}`);
-      } else {
-        setUpdateStatus(`You are up to date (v${current})`);
-      }
-    } catch (err) {
-      setUpdateStatus('Check failed: ' + (err as Error).message);
-    } finally {
-      setChecking(false);
-    }
-  };
-
   const tabs: { key: Tab; label: string; icon: string }[] = [
     { key: 'ai', label: 'AI', icon: '\u{1F916}' },
     { key: 'functions', label: 'Functions', icon: '\u{26A1}' },
     { key: 'appearance', label: 'Appearance', icon: '\u{1F3A8}' },
+    { key: 'general', label: 'General', icon: '\u{2699}\u{FE0F}' },
   ];
 
   if (!ready) {
@@ -143,45 +120,21 @@ export default function SettingsApp() {
           <AppearanceTab
             settings={settings.appearance}
             onChange={(a) => { setSettings((p) => ({ ...p, appearance: a })); setDirty(true); }}
+          />
+        )}
+        {activeTab === 'general' && (
+          <GeneralTab
             autoHideSeconds={settings.popup.autoDismissSeconds}
             onChangeAutoHide={(s) => { setSettings((p) => ({ ...p, popup: { ...p.popup, autoDismissSeconds: s } })); setDirty(true); }}
+            autoStart={settings.autoStart}
+            onChangeAutoStart={(v) => { setSettings((p) => ({ ...p, autoStart: v })); setDirty(true); }}
+            onReset={handleReset}
           />
         )}
       </div>
 
-      {/* Version & Update */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>WinTranslator v{APP_VERSION}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {updateStatus && (
-            <span style={{
-              fontSize: 11,
-              color: updateStatus.includes('New version')
-                ? '#ffa500'
-                : updateStatus.includes('up to date')
-                ? '#30d158'
-                : updateStatus.includes('failed')
-                ? '#ff453a'
-                : 'rgba(255,255,255,0.5)',
-            }}>
-              {updateStatus.includes('New version') ? (
-                <span style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                  onClick={() => window.electronAPI?.popup.openUrl(GITHUB_RELEASES_URL)}>
-                  {updateStatus}
-                </span>
-              ) : updateStatus}
-            </span>
-          )}
-          <button onClick={checkForUpdates} disabled={checking}
-            style={{ fontSize: 11, padding: '3px 10px' }}>
-            {checking ? 'Checking...' : 'Check for Updates'}
-          </button>
-        </div>
-      </div>
-
       {/* Bottom bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-        <button className="danger" onClick={handleReset}>Reset Defaults</button>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => api?.settings.close()}>Cancel</button>
           <button className="primary" disabled={!dirty} onClick={() => handleSave(settings)}>Save</button>

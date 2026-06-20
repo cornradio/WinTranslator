@@ -1,6 +1,6 @@
 import type { AppSettings } from './types';
 
-export const APP_VERSION = '1.1.1';
+export const APP_VERSION = '1.2.0';
 export const GITHUB_RELEASES_URL = 'https://github.com/cornradio/WinTranslator/releases';
 export const GITHUB_API_LATEST_RELEASE = 'https://api.github.com/repos/cornradio/WinTranslator/releases/latest';
 
@@ -57,7 +57,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
     opacity: 0.82,
     borderRadius: 14,
     borderWidth: 1,
+    blurEnabled: true,
   },
+  autoStart: false,
 };
 
 export const POPUP_WIDTH = 480;

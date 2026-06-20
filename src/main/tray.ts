@@ -53,10 +53,12 @@ export function rebuildTrayMenu(): void {
     });
   }
 
+  const settingsAccelerator = process.platform === 'darwin' ? 'Command+,' : 'Ctrl+,';
+
   menuItems.push(
     { type: 'separator' },
     { label: 'History', click: () => historyHandler?.() },
-    { label: 'Settings...', click: () => settingsHandler?.() },
+    { label: 'Settings...', accelerator: settingsAccelerator, click: () => settingsHandler?.() },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },
   );

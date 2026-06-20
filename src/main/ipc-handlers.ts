@@ -1,4 +1,4 @@
-import { ipcMain, shell } from 'electron';
+import { ipcMain, shell, app } from 'electron';
 import { IPC } from '../shared/ipc-channels';
 import {
   getSettings,
@@ -32,6 +32,10 @@ export function registerIpcHandlers(): void {
       registerAllHotkeys();
       rebuildTrayMenu();
     }
+    // Toggle launch at login
+    if (key === 'autoStart') {
+      app.setLoginItemSettings({ openAtLogin: value as boolean });
+    }
     notifySettingsUpdated(updated);
   });
 
@@ -58,6 +62,13 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.OPEN_URL, (_event, url: string) => {
     shell.openExternal(url);
+  });
+
+  ipcMain.handle(IPC.POPUP_SET_VIBRANCY, (_event, enabled: boolean) => {
+    const win = getPopupWindow();
+    if (win && !win.isDestroyed() && process.platform === 'darwin') {
+      win.setVibrancy(enabled ? 'fullscreen-ui' : null);
+    }
   });
 
   // Settings window

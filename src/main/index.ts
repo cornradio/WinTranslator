@@ -1,6 +1,6 @@
 import { app, clipboard } from 'electron';
 import { createTray, destroyTray } from './tray';
-import { registerAllHotkeys, unregisterAllHotkeys, setGroupHandler } from './hotkeys';
+import { registerAllHotkeys, unregisterAllHotkeys, setGroupHandler, setSettingsHandler } from './hotkeys';
 import { captureSelectedText } from './clipboard';
 import { createPopupWindow, showPopupAtCursor, showPopupForHistory, togglePopup, isPopupVisible } from './windows/popup-window';
 import { createSettingsWindow } from './windows/settings-window';
@@ -39,6 +39,12 @@ async function handleGroupAction(groupId: string): Promise<void> {
 
 app.whenReady().then(() => {
   console.log('[WinTranslator] App ready');
+
+  // Hide dock icon on macOS — this is a tray-only utility app
+  if (process.platform === 'darwin') {
+    app.dock?.hide();
+  }
+
   registerIpcHandlers();
 
   const popup = createPopupWindow();
@@ -49,6 +55,7 @@ app.whenReady().then(() => {
 
   // Single handler: receives groupId, looks up prompts from settings
   setGroupHandler((groupId) => handleGroupAction(groupId));
+  setSettingsHandler(() => createSettingsWindow());
   registerAllHotkeys();
 
   createTray(

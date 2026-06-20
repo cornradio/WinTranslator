@@ -8,6 +8,7 @@ export const IPC = {
   POPUP_RESIZE: 'popup:resize',
   POPUP_HIDE: 'popup:hide',
   POPUP_START_DRAG: 'popup:start-drag',
+  POPUP_SET_VIBRANCY: 'popup:set-vibrancy',
   SETTINGS_CLOSE: 'settings:close',
   HISTORY_GET: 'history:get',
   HISTORY_ADD: 'history:add',

@@ -1,3 +1,23 @@
+# WinTranslator v1.2.0
+
+## macOS Support
+
+This release brings full macOS support, making WinTranslator a truly cross-platform translation tool.
+
+- **Native vibrancy blur** — Popup uses macOS native `NSVisualEffectView` for a frosted-glass effect, with a toggle in Appearance settings to switch between blur and classic opacity.
+- **Dock-free operation** — Runs as a tray-only utility with no dock icon.
+- **Option key hotkeys** — Fixed hotkey recording so `Option + letter` shortcuts (e.g. `Option+E`) work correctly instead of being intercepted by the macOS compose modifier.
+- **Launch at Login** — New toggle in General settings to start WinTranslator automatically at login.
+
+## General
+
+- **New General tab** — Consolidated app-level settings (auto-hide, launch at login, check for updates, reset defaults) into a dedicated tab.
+- **Settings shortcut** — Press `Cmd+,` (macOS) or `Ctrl+,` (Windows/Linux) anywhere to open settings. Also works when the tray menu is open.
+- **GitHub button** — Quick link to the project repo in the General tab.
+- **Quit fix** — Tray menu "Quit" now properly exits the app in dev mode.
+
+---
+
 # WinTranslator v1.1.1
 
 ## New Features

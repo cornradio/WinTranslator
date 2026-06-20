@@ -49,6 +49,7 @@ export interface AppearanceSettings {
   opacity: number;
   borderRadius: number;
   borderWidth: number;
+  blurEnabled: boolean;
 }
 
 export interface PopupSettings {
@@ -61,6 +62,7 @@ export interface AppSettings {
   functions: FunctionGroup[];
   popup: PopupSettings;
   appearance: AppearanceSettings;
+  autoStart: boolean;
 }
 
 export interface ElectronAPI {
@@ -76,6 +78,7 @@ export interface ElectronAPI {
     hide(): Promise<void>;
     startDrag(): Promise<void>;
     openUrl(url: string): Promise<void>;
+    setVibrancy(enabled: boolean): Promise<void>;
     onShowText(callback: (data: { text: string; groupId: string }) => void): () => void;
     onShowHistory(callback: () => void): () => void;
     onDismissTimer(callback: (data: { ms: number }) => void): () => void;

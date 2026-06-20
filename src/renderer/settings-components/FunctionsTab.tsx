@@ -82,24 +82,48 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const startRecording = useCallback((groupId: string) => {
     setRecordingId(groupId);
+
+    // Helper: extract the physical key from a KeyboardEvent.
+    // On macOS, Option+letter produces dead keys (e.key = "Dead") because
+    // Option is the system compose modifier. e.code gives the physical key
+    // (e.g. "KeyE" → "E", "Digit1" → "1", "F5" → "F5").
+    const resolveKey = (e: KeyboardEvent): string => {
+      const { key: rawKey, code } = e;
+      if (rawKey === 'Dead' || (rawKey.length > 1 && !/^[A-Za-z0-9]$/.test(rawKey))) {
+        if (code.startsWith('Key')) return code.slice(3).toUpperCase();
+        if (code.startsWith('Digit')) return code.slice(5);
+        return code; // F5, BracketLeft, ArrowUp, etc.
+      }
+      return rawKey.toUpperCase();
+    };
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('keydown', handler, true);
+      setRecordingId(null);
+    };
+
     const handler = (e: KeyboardEvent) => {
       e.preventDefault();
       e.stopPropagation();
+
+      // Skip pure modifier keys — wait for the actual key
+      if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
+
       const parts: string[] = [];
       if (e.ctrlKey) parts.push('Ctrl');
       if (e.altKey) parts.push('Alt');
       if (e.shiftKey) parts.push('Shift');
       if (e.metaKey) parts.push(isMac ? 'Command' : 'Super');
-      const key = e.key.toUpperCase();
-      if (!['CONTROL', 'ALT', 'SHIFT', 'META'].includes(key)) {
-        parts.push(key.length === 1 ? key : e.key);
-        updateGroup(groupId, { hotkey: parts.join('+') });
-        setRecordingId(null);
-        window.removeEventListener('keydown', handler, true);
-      }
+      parts.push(resolveKey(e));
+
+      updateGroup(groupId, { hotkey: parts.join('+') });
+      cleanup();
     };
+
     window.addEventListener('keydown', handler, true);
-    setTimeout(() => { setRecordingId(null); window.removeEventListener('keydown', handler, true); }, 5000);
+    timeoutId = setTimeout(cleanup, 5000);
   }, [updateGroup]);
 
   const kbdStyle: React.CSSProperties = {

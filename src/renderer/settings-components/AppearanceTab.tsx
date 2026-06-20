@@ -3,8 +3,6 @@ import type { AppearanceSettings, Theme } from '../../shared/types';
 interface AppearanceTabProps {
   settings: AppearanceSettings;
   onChange: (settings: AppearanceSettings) => void;
-  autoHideSeconds: number;
-  onChangeAutoHide: (seconds: number) => void;
 }
 
 const themes: { value: Theme; label: string; preview: string; text: string; desc: string }[] = [
@@ -18,7 +16,7 @@ export function isThemeDark(theme: Theme): boolean {
   return theme === 'dark' || theme === 'monokai';
 }
 
-export default function AppearanceTab({ settings, onChange, autoHideSeconds, onChangeAutoHide }: AppearanceTabProps) {
+export default function AppearanceTab({ settings, onChange }: AppearanceTabProps) {
   const handleChange = (key: keyof AppearanceSettings, value: unknown) => {
     onChange({ ...settings, [key]: value });
   };
@@ -69,16 +67,16 @@ export default function AppearanceTab({ settings, onChange, autoHideSeconds, onC
         </div>
       </Section>
 
-      {/* Auto-hide */}
-      <Section title="Auto-hide">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+      {/* Blur Effect (macOS vibrancy) */}
+      <Section title="Blur Effect">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
-            onClick={() => onChangeAutoHide(autoHideSeconds > 0 ? 0 : 8)}
+            onClick={() => handleChange('blurEnabled', !settings.blurEnabled)}
             style={{
               width: '40px',
               height: '22px',
               borderRadius: '11px',
-              background: autoHideSeconds > 0 ? '#0a84ff' : 'rgba(255,255,255,0.15)',
+              background: settings.blurEnabled ? '#0a84ff' : 'rgba(255,255,255,0.15)',
               cursor: 'pointer',
               position: 'relative',
               transition: 'background 0.2s',
@@ -91,30 +89,14 @@ export default function AppearanceTab({ settings, onChange, autoHideSeconds, onC
               background: '#fff',
               position: 'absolute',
               top: '2px',
-              left: autoHideSeconds > 0 ? '20px' : '2px',
+              left: settings.blurEnabled ? '20px' : '2px',
               transition: 'left 0.2s',
             }} />
           </div>
           <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
-            {autoHideSeconds > 0 ? `Auto-hide after ${autoHideSeconds}s` : 'Never auto-hide'}
+            {settings.blurEnabled ? 'Native blur enabled (macOS)' : 'Disabled — using opacity'}
           </span>
         </div>
-        {autoHideSeconds > 0 && (
-          <>
-            <input
-              type="range"
-              min={1}
-              max={60}
-              value={autoHideSeconds}
-              onChange={(e) => onChangeAutoHide(Number(e.target.value))}
-              style={{ width: '100%', accentColor: '#0a84ff' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
-              <span>1s</span>
-              <span>60s</span>
-            </div>
-          </>
-        )}
       </Section>
 
       {/* Border Radius */}

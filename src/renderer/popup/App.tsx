@@ -26,6 +26,9 @@ export default function PopupApp() {
   const abortControllersRef = useRef<AbortController[]>([]);
   const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const chatMenuRef = useRef<HTMLDivElement>(null);
+  const [copiedToast, setCopiedToast] = useState(false);
+  const [chatHighlight, setChatHighlight] = useState(0);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const isStreaming = results.some((r) => r.isStreaming);
 
@@ -40,14 +43,67 @@ export default function PopupApp() {
     }
   }, []);
 
-  // ESC to dismiss
+  // Keyboard shortcuts: ESC, Cmd/Ctrl+C copy, Shift+C chat, arrow navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') api?.popup.hide();
+      // ESC — close chat menu first, then dismiss popup
+      if (e.key === 'Escape') {
+        if (chatMenuOpen) {
+          setChatMenuOpen(false);
+        } else {
+          api?.popup.hide();
+        }
+        return;
+      }
+
+      // Chat menu navigation (only when menu is open)
+      if (chatMenuOpen) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setChatHighlight((prev) => (prev + 1) % chatServices.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setChatHighlight((prev) => (prev - 1 + chatServices.length) % chatServices.length);
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleChat(chatServices[chatHighlight].url);
+          return;
+        }
+      }
+
+      // Cmd+C (macOS) or Ctrl+C (other) — copy result text
+      const copyMod = isMac ? e.metaKey : e.ctrlKey;
+      if (copyMod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'c') {
+        const sel = window.getSelection();
+        if (sel && sel.toString().trim()) return;
+        const allText = results.filter((r) => r.text).map((r) => r.text).join('\n\n');
+        if (allText) {
+          e.preventDefault();
+          navigator.clipboard.writeText(allText);
+          // Show "Copied!" toast
+          setCopiedToast(true);
+          clearTimeout(toastTimerRef.current);
+          toastTimerRef.current = setTimeout(() => setCopiedToast(false), 1500);
+        }
+        return;
+      }
+
+      // Shift+C (no modifiers) — toggle chat menu
+      if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.key === 'C') {
+        if (!showHistory && results.some((r) => r.text)) {
+          e.preventDefault();
+          setChatHighlight(0);
+          setChatMenuOpen((prev) => !prev);
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [results, showHistory, chatMenuOpen, chatHighlight]);
 
   // Listen for incoming text from main process
   useEffect(() => {
@@ -217,12 +273,25 @@ export default function PopupApp() {
   const ap = settings.appearance;
   const isDark = isThemeDark(ap.theme);
   const isMonokai = ap.theme === 'monokai';
+  // On macOS, native vibrancy provides the blur effect when blurEnabled is on.
+  // Use transparent background so the system blur shows through; otherwise use opacity-based bg.
+  const isMac = navigator.platform.toLowerCase().includes('mac');
+  const useVibrancy = isMac && ap.blurEnabled;
+  const bg = useVibrancy ? 'transparent' : getThemeBg(ap.theme, ap.opacity);
+
+  // Sync vibrancy with the main process when blurEnabled changes
+  useEffect(() => {
+    if (isMac && api) {
+      api.popup.setVibrancy(ap.blurEnabled);
+    }
+  }, [ap.blurEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const panelStyle: React.CSSProperties = {
     position: 'relative',
     padding: '12px 16px',
     height: '100vh',
     overflowY: 'auto',
-    background: getThemeBg(ap.theme, ap.opacity),
+    background: bg,
     border: `${ap.borderWidth}px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'}`,
     borderRadius: `${ap.borderRadius}px`,
     color: isDark ? (isMonokai ? '#f8f8f2' : 'rgba(255,255,255,0.92)') : 'rgba(0,0,0,0.85)',
@@ -271,16 +340,19 @@ export default function PopupApp() {
                   borderRadius: 8, padding: '4px 0', minWidth: 140,
                   boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
                 }}>
-                  {chatServices.map((s) => (
+                  {chatServices.map((s, i) => (
                     <div key={s.name} onClick={() => handleChat(s.url)}
+                      onMouseEnter={() => setChatHighlight(i)}
                       style={{
                         padding: '6px 14px', fontSize: 12, cursor: 'pointer',
                         color: isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)',
+                        background: chatHighlight === i
+                          ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)')
+                          : 'transparent',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
                       {s.name}
+                      {chatHighlight === i && <span style={{ float: 'right', fontSize: 10, color: 'var(--text-secondary)', marginLeft: 12 }}>{'\u21B5'}</span>}
                     </div>
                   ))}
                 </div>
@@ -288,8 +360,23 @@ export default function PopupApp() {
             </div>
           )}
           {!showHistory && results.length === 1 && results[0].text && <CopyButton text={results[0].text} />}
-          <button className="no-drag" onClick={handleHide}
-            style={{ background: 'none', border: 'none', padding: '2px 6px', fontSize: 14, color: 'var(--text-secondary)', cursor: 'pointer' }}>{'\u00D7'}</button>
+          {isMac ? (
+            <button className="no-drag" onClick={handleHide}
+              onMouseEnter={(e) => (e.currentTarget.dataset.hover = 'true')}
+              onMouseLeave={(e) => (e.currentTarget.dataset.hover = '')}
+              style={{
+                width: 12, height: 12, borderRadius: '50%', background: '#ff5f56',
+                border: 'none', padding: 0, cursor: 'pointer', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', fontSize: 8,
+                lineHeight: 1, color: 'transparent', transition: 'color 0.15s',
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.color = '#4d0000')}
+              onMouseOut={(e) => (e.currentTarget.style.color = 'transparent')}
+            >{'\u2715'}</button>
+          ) : (
+            <button className="no-drag" onClick={handleHide}
+              style={{ background: 'none', border: 'none', padding: '2px 6px', fontSize: 14, color: 'var(--text-secondary)', cursor: 'pointer' }}>{'\u00D7'}</button>
+          )}
         </div>
       </div>
 
@@ -347,6 +434,19 @@ export default function PopupApp() {
       {!sourceText && !showHistory && !waitingForText && results.length === 0 && (
         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0', fontSize: 12 }}>
           Select text and press a hotkey to translate
+        </div>
+      )}
+
+      {/* Copy toast */}
+      {copiedToast && (
+        <div style={{
+          position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+          padding: '5px 14px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+          background: 'var(--accent-green)', color: '#fff',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)', zIndex: 200,
+          animation: 'fade-in 0.15s ease-out',
+        }}>
+          {'\u2713'} Copied
         </div>
       )}
     </div>

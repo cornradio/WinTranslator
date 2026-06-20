@@ -15,6 +15,7 @@ const electronAPI: ElectronAPI = {
     hide: () => ipcRenderer.invoke(IPC.POPUP_HIDE),
     startDrag: () => ipcRenderer.invoke(IPC.POPUP_START_DRAG),
     openUrl: (url: string) => ipcRenderer.invoke(IPC.OPEN_URL, url),
+    setVibrancy: (enabled: boolean) => ipcRenderer.invoke(IPC.POPUP_SET_VIBRANCY, enabled),
     onShowText: (callback: (data: { text: string; groupId: string }) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, data: { text: string; groupId: string }) => callback(data);
       ipcRenderer.on(IPC.POPUP_SHOW_TEXT, handler);

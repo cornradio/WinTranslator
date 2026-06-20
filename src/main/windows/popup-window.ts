@@ -1,20 +1,29 @@
-import { BrowserWindow, screen } from 'electron';
+import { BrowserWindow, screen, app } from 'electron';
 import path from 'path';
 import { IPC } from '../../shared/ipc-channels';
 import { POPUP_WIDTH, POPUP_MIN_HEIGHT, POPUP_MAX_HEIGHT } from '../../shared/constants';
+import { getSettings } from '../store';
 
 let popupWindow: BrowserWindow | null = null;
+let isQuitting = false;
+
+// Allow popup to close when the app is quitting
+app.on('before-quit', () => { isQuitting = true; });
 
 export function createPopupWindow(): BrowserWindow {
   if (popupWindow && !popupWindow.isDestroyed()) {
     return popupWindow;
   }
 
+  const blurEnabled = getSettings().appearance.blurEnabled;
+
   popupWindow = new BrowserWindow({
     width: POPUP_WIDTH,
     height: POPUP_MIN_HEIGHT,
     frame: false,
     transparent: true,
+    vibrancy: process.platform === 'darwin' && blurEnabled ? 'fullscreen-ui' : undefined,
+    visualEffectState: 'active',
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: true,
@@ -32,11 +41,13 @@ export function createPopupWindow(): BrowserWindow {
 
   popupWindow.setAlwaysOnTop(true, 'screen-saver');
 
-  // Prevent the popup from being destroyed on close - hide instead
+  // Prevent the popup from being destroyed on close - hide instead.
+  // But allow close when the app is quitting.
   popupWindow.on('close', (e) => {
-    if (!popupWindow) return;
-    e.preventDefault();
-    popupWindow.hide();
+    if (!isQuitting && popupWindow) {
+      e.preventDefault();
+      popupWindow.hide();
+    }
   });
 
   popupWindow.on('blur', () => {
