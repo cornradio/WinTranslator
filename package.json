@@ -1,6 +1,6 @@
 {
   "name": "wintranslator",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "Desktop translation app with floating popup, global hotkeys, and LLM streaming",
   "author": {
     "name": "cornradio",

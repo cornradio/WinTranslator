@@ -1,3 +1,17 @@
+## WinTranslator v1.2.4
+
+### New
+- **Check Balance** — AI 设置页可直接查询 API 账户余额（支持 DeepSeek 及兼容的 OpenAI 服务商）
+- **Check Online** — 一键打开 DeepSeek 用量页面
+- **Linux 支持** — 新增 AppImage 和 deb 安装包
+
+### Improved
+- Functions 标签页布局优化：快捷键和托盘菜单开关各占一行，不再拥挤
+- 删除功能移至左侧列表，hover 显示删除按钮
+- 新增 functions.md 文档，记录所有预设功能和 prompt
+- 自动化构建：Windows / macOS / Linux 三平台 GitHub Actions 自动打包发布
+
+
 # WinTranslator v1.2.0
 
 ## macOS Support
