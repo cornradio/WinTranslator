@@ -23,7 +23,6 @@
   },
   "linux": {
     "target": ["AppImage", "deb"],
-    "icon": "resources/icon.ico",
     "category": "Utility"
   },
   "nsis": {
