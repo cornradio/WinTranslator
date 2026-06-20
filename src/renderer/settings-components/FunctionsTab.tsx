@@ -23,6 +23,7 @@ interface FunctionsTabProps {
 
 export default function FunctionsTab({ functions, onChange, onExport, onImport }: FunctionsTabProps) {
   const [selectedId, setSelectedId] = useState<string>(functions[0]?.id || '');
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const selected = functions.find((f) => f.id === selectedId);
 
@@ -146,19 +147,32 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
           <div
             key={f.id}
             onClick={() => setSelectedId(f.id)}
+            onMouseEnter={() => setHoveredId(f.id)}
+            onMouseLeave={() => setHoveredId(null)}
             style={{
               padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
               background: f.id === selectedId ? 'rgba(255,255,255,0.08)' : 'transparent',
               border: f.id === selectedId ? '1px solid rgba(255,255,255,0.12)' : '1px solid transparent',
-              transition: 'all 0.15s',
+              transition: 'all 0.15s', position: 'relative',
             }}
           >
             <div style={{ fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
               <span>{f.icon}</span> {f.name}
             </div>
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
-              {f.hotkey ? formatHotkey(f.hotkey) : 'No hotkey'} \u00B7 {f.prompts.length} prompt{f.prompts.length !== 1 ? 's' : ''}
+              {f.hotkey ? formatHotkey(f.hotkey) : 'No hotkey'} · {f.prompts.length} prompt{f.prompts.length !== 1 ? 's' : ''}
             </div>
+            {hoveredId === f.id && (
+              <div
+                onClick={(e) => { e.stopPropagation(); removeGroup(f.id); }}
+                style={{
+                  position: 'absolute', right: 6, top: 6, width: 18, height: 18,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 4, background: 'rgba(255,69,58,0.15)', color: '#ff453a',
+                  fontSize: 12, lineHeight: 1, cursor: 'pointer',
+                }}
+              >x</div>
+            )}
           </div>
         ))}
         <button onClick={addGroup} style={{ marginTop: 8, fontSize: 12 }}>+ Add Function</button>
@@ -166,6 +180,10 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
           <button onClick={onExport} style={{ flex: 1, fontSize: 10, padding: '3px 0' }}>Export</button>
           <button onClick={onImport} style={{ flex: 1, fontSize: 10, padding: '3px 0' }}>Import</button>
         </div>
+        <a onClick={() => window.electronAPI?.popup.openUrl('https://github.com/cornradio/WinTranslator/blob/master/functions.md')}
+          style={{ marginTop: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.3)', textDecoration: 'underline', cursor: 'pointer' }}>
+          View function examples
+        </a>
       </div>
 
       {/* Right: editor */}
@@ -187,10 +205,10 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
             </div>
           </div>
 
-          {/* Hotkey + menu toggle */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-            <div>
-              <label style={labelStyle}>Hotkey</label>
+          {/* Hotkey */}
+          <div>
+            <label style={labelStyle}>Hotkey</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div onClick={() => startRecording(selected.id)} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
                 background: recordingId === selected.id ? 'rgba(10,132,255,0.15)' : 'rgba(255,255,255,0.06)',
@@ -209,27 +227,29 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
               </div>
               {selected.hotkey && (
                 <button onClick={() => updateGroup(selected.id, { hotkey: '' })}
-                  style={{ marginLeft: 6, fontSize: 10, padding: '2px 6px' }}>Clear</button>
+                  style={{ fontSize: 10, padding: '2px 6px' }}>Clear</button>
               )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div onClick={() => updateGroup(selected.id, { showInMenu: !selected.showInMenu })} style={{
-                width: 36, height: 20, borderRadius: 10, cursor: 'pointer', position: 'relative',
-                background: selected.showInMenu ? '#0a84ff' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s',
-              }}>
-                <div style={{
-                  width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2,
-                  left: selected.showInMenu ? 18 : 2, transition: 'left 0.2s',
-                }} />
-              </div>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>Menu</span>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
+              Multiple functions can share the same hotkey to run in parallel.
             </div>
-            <button className="danger" onClick={() => removeGroup(selected.id)}
-              style={{ marginLeft: 'auto', fontSize: 11, padding: '4px 10px' }}>Delete</button>
           </div>
 
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
-            Tip: Multiple functions can share the same hotkey to run in parallel.
+          {/* Menu toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div onClick={() => updateGroup(selected.id, { showInMenu: !selected.showInMenu })} style={{
+              width: 36, height: 20, borderRadius: 10, cursor: 'pointer', position: 'relative', flexShrink: 0,
+              background: selected.showInMenu ? '#0a84ff' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s',
+            }}>
+              <div style={{
+                width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2,
+                left: selected.showInMenu ? 18 : 2, transition: 'left 0.2s',
+              }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 500 }}>Show in Tray Menu</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>Right-click tray icon to access this function</div>
+            </div>
           </div>
 
           {/* Prompts */}
