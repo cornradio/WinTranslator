@@ -11,30 +11,17 @@ bilibili视频教程 https://www.bilibili.com/video/BV1xnji6pEzj
 
 ### Windows
 
-在右侧的 release 页面中下载运行 `WinTranslator Setup 1.0.0.exe` 安装。
+在右侧的 [release](https://github.com/cornradio/WinTranslator/releases) 页面中下载运行 `WinTranslator Setup.exe` 安装。
 
 启动程序后右下角托盘会出现一个图标，说明已经在后台运行了。
 
 ### macOS
 
-本地开发运行：
-
-```bash
-npm install
-npm run dev
+当前 macOS 包是 unsigned 本地包，没有做 Apple Developer ID 签名和公证。如果系统拦截启动--如提示损坏等，需要执行命令：
+```
+xattr -cr /Applications/WinTranslator.app
 ```
 
-本地打包 DMG/ZIP：
-
-```bash
-npm run build:mac
-```
-
-首次使用选中文字捕获时，需要给应用授予辅助功能权限：
-
-`System Settings` → `Privacy & Security` → `Accessibility` → 添加并启用 WinTranslator。
-
-当前 macOS 包是 unsigned 本地包，没有做 Apple Developer ID 签名和公证。如果系统拦截启动，可以在 Finder 中右键应用选择 `Open`，或到 `System Settings` → `Privacy & Security` 中允许打开。
 
 
 ## 怎么用
