@@ -32,9 +32,13 @@ export function registerIpcHandlers(): void {
       registerAllHotkeys();
       rebuildTrayMenu();
     }
-    // Toggle launch at login
+    // Toggle launch at login — explicit empty args to avoid dev-mode flags
     if (key === 'autoStart') {
-      app.setLoginItemSettings({ openAtLogin: value as boolean });
+      app.setLoginItemSettings({ openAtLogin: value as boolean, args: [] });
+    }
+    // Mark setup complete when user configures an API key
+    if (key === 'ai' && (value as { apiKey?: string })?.apiKey) {
+      setSettings({ hasCompletedSetup: true });
     }
     notifySettingsUpdated(updated);
   });

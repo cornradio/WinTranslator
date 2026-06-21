@@ -1,10 +1,11 @@
-import { app, clipboard } from 'electron';
+import { app, clipboard, shell } from 'electron';
 import { createTray, destroyTray } from './tray';
 import { registerAllHotkeys, unregisterAllHotkeys, setGroupHandler, setSettingsHandler } from './hotkeys';
 import { captureSelectedText } from './clipboard';
 import { createPopupWindow, showPopupAtCursor, showPopupForHistory, togglePopup, isPopupVisible } from './windows/popup-window';
 import { createSettingsWindow } from './windows/settings-window';
 import { registerIpcHandlers } from './ipc-handlers';
+import { getSetting } from './store';
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) app.quit();
@@ -63,6 +64,13 @@ app.whenReady().then(() => {
     () => createSettingsWindow(),
     () => showPopupForHistory(),
   );
+
+  // First-run: open settings + README so user knows how to set up
+  if (!getSetting('hasCompletedSetup')) {
+    console.log('[WinTranslator] First run — opening settings + README');
+    createSettingsWindow();
+    shell.openExternal('https://github.com/cornradio/WinTranslator');
+  }
 
   console.log('[WinTranslator] Initialized');
 });

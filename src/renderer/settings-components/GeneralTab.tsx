@@ -136,7 +136,13 @@ export default function GeneralTab({ autoHideSeconds, onChangeAutoHide, autoStar
       {/* Reset */}
       <div>
         <div style={labelStyle}>Danger Zone</div>
-        <button className="danger" onClick={onReset}>Reset Defaults</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => window.electronAPI?.popup.openUrl('https://github.com/cornradio/WinTranslator')}
+            style={{ fontSize: 11, padding: '4px 12px' }}>
+            Open Setup Guide
+          </button>
+          <button className="danger" onClick={onReset}>Reset Defaults</button>
+        </div>
       </div>
     </div>
   );

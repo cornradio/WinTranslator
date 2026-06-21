@@ -63,6 +63,7 @@ export interface AppSettings {
   popup: PopupSettings;
   appearance: AppearanceSettings;
   autoStart: boolean;
+  hasCompletedSetup: boolean;
 }
 
 export interface ElectronAPI {
