@@ -1,6 +1,6 @@
 import type { AppSettings } from './types';
 
-export const APP_VERSION = '1.2.7';
+export const APP_VERSION = '1.2.8';
 export const GITHUB_RELEASES_URL = 'https://github.com/cornradio/WinTranslator/releases';
 export const GITHUB_API_LATEST_RELEASE = 'https://api.github.com/repos/cornradio/WinTranslator/releases/latest';
 

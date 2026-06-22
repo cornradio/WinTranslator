@@ -1,11 +1,13 @@
 import { app, clipboard, shell } from 'electron';
+import { execSync } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 import { createTray, destroyTray } from './tray';
-import { registerAllHotkeys, unregisterAllHotkeys, setGroupHandler, setSettingsHandler } from './hotkeys';
+import { registerAllHotkeys, unregisterAllHotkeys, setGroupHandler } from './hotkeys';
 import { captureSelectedText } from './clipboard';
 import { createPopupWindow, showPopupAtCursor, showPopupForHistory, togglePopup, isPopupVisible } from './windows/popup-window';
 import { createSettingsWindow } from './windows/settings-window';
 import { registerIpcHandlers } from './ipc-handlers';
-import { getSetting } from './store';
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) app.quit();
@@ -44,6 +46,11 @@ app.whenReady().then(() => {
   // Hide dock icon on macOS — this is a tray-only utility app
   if (process.platform === 'darwin') {
     app.dock?.hide();
+    // Disable macOS window state restoration so auto-launch stays tray-only.
+    // Without this, macOS may restore Settings/popup windows that were open at last quit.
+    try {
+      execSync('defaults write com.wintranslator.app NSQuitAlwaysKeepsWindows -bool false', { stdio: 'ignore' });
+    } catch { /* ignore if defaults fails */ }
   }
 
   registerIpcHandlers();
@@ -56,7 +63,6 @@ app.whenReady().then(() => {
 
   // Single handler: receives groupId, looks up prompts from settings
   setGroupHandler((groupId) => handleGroupAction(groupId));
-  setSettingsHandler(() => createSettingsWindow());
   registerAllHotkeys();
 
   createTray(
@@ -65,11 +71,17 @@ app.whenReady().then(() => {
     () => showPopupForHistory(),
   );
 
-  // First-run: open settings + README so user knows how to set up
-  if (!getSetting('hasCompletedSetup')) {
+  // First-run: open settings + README so user knows how to set up.
+  // Uses a marker file for detection — persists across dev runs (unlike config store
+  // which only sets hasCompletedSetup after API key entry).
+  const markerPath = app.isPackaged
+    ? path.join(app.getPath('userData'), '.setup-done')
+    : path.join(__dirname, '../../.setup-done');
+  if (!fs.existsSync(markerPath)) {
     console.log('[WinTranslator] First run — opening settings + README');
     createSettingsWindow();
     shell.openExternal('https://github.com/cornradio/WinTranslator');
+    fs.writeFileSync(markerPath, '', 'utf-8');
   }
 
   console.log('[WinTranslator] Initialized');

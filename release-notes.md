@@ -1,3 +1,9 @@
+## WinTranslator v1.2.8
+bug fix
+去掉全局的设置快捷键
+避免开机自启的时候出现奇怪的页面
+增加 qoder-read.md
+
 ## WinTranslator v1.2.4
 
 ### New

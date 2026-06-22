@@ -2,17 +2,11 @@ import { globalShortcut } from 'electron';
 import { getSettings } from './store';
 
 type GroupHandler = (groupId: string) => void;
-type SettingsHandler = () => void;
 
 let handler: GroupHandler | null = null;
-let settingsHandler: SettingsHandler | null = null;
 
 export function setGroupHandler(h: GroupHandler): void {
   handler = h;
-}
-
-export function setSettingsHandler(h: SettingsHandler): void {
-  settingsHandler = h;
 }
 
 export function registerAllHotkeys(): void {
@@ -32,18 +26,6 @@ export function registerAllHotkeys(): void {
     } catch (err) {
       console.error(`[hotkey] Failed to register ${group.hotkey}:`, err);
     }
-  }
-
-  // Register settings shortcut: Cmd+, on macOS, Ctrl+, elsewhere
-  const settingsAccelerator = process.platform === 'darwin' ? 'Command+,' : 'Ctrl+,';
-  try {
-    const ok = globalShortcut.register(settingsAccelerator, () => {
-      console.log(`[hotkey] ${settingsAccelerator} → Settings`);
-      settingsHandler?.();
-    });
-    console.log(`[hotkey] ${settingsAccelerator} registered: ${ok} → Settings`);
-  } catch (err) {
-    console.error(`[hotkey] Failed to register ${settingsAccelerator}:`, err);
   }
 }
 
