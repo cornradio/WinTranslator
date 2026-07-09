@@ -3,6 +3,7 @@ import path from 'path';
 import { IPC } from '../../shared/ipc-channels';
 import { POPUP_WIDTH, POPUP_MIN_HEIGHT, POPUP_MAX_HEIGHT } from '../../shared/constants';
 import { getSettings } from '../store';
+import { getFrontmostApp, setCachedFrontmost } from '../clipboard';
 
 let popupWindow: BrowserWindow | null = null;
 let isQuitting = false;
@@ -41,6 +42,12 @@ export function createPopupWindow(): BrowserWindow {
 
   popupWindow.setAlwaysOnTop(true, 'screen-saver');
 
+  // macOS: show popup in all Spaces including fullscreen Spaces,
+  // so pressing the hotkey in a fullscreen app doesn't switch back to the desktop.
+  if (process.platform === 'darwin') {
+    popupWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  }
+
   // Prevent the popup from being destroyed on close - hide instead.
   // But allow close when the app is quitting.
   popupWindow.on('close', (e) => {
@@ -72,9 +79,17 @@ export function createPopupWindow(): BrowserWindow {
   return popupWindow;
 }
 
-export function showPopupAtCursor(text: string, groupId: string): void {
+export async function showPopupAtCursor(text: string, groupId: string): Promise<void> {
   const win = createPopupWindow();
   if (!win || win.isDestroyed()) return;
+
+  // Cache the frontmost app BEFORE showing the popup.
+  // After show(), our popup becomes frontmost and the user's app is lost.
+  const frontApp = await getFrontmostApp();
+  if (frontApp) {
+    setCachedFrontmost(frontApp);
+    console.log(`[popup] Cached frontmost app: ${frontApp.name} (${frontApp.bundleId})`);
+  }
 
   const cursorPoint = screen.getCursorScreenPoint();
   const display = screen.getDisplayNearestPoint(cursorPoint);

@@ -1,11 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 
+// Read current version from package.json
+const pkgPath = path.join(__dirname, 'package.json');
+const currentVersion = JSON.parse(fs.readFileSync(pkgPath, 'utf8')).version || 'unknown';
+
 const version = process.argv[2];
 if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
-  console.log('Usage: node bump-version.js <version>');
-  console.log('Example: node bump-version.js 1.2.7');
-  process.exit(1);
+  console.log(`Current version: ${currentVersion}\n`);
+  console.log('Usage: node bump-version.js <new-version>');
+  console.log('Example: node bump-version.js 1.3.0');
+  process.exit(0);
 }
 
 const files = [
@@ -40,7 +45,7 @@ for (const f of files) {
 }
 
 if (ok) {
-  console.log(`\nAll files updated to v${version}`);
+  console.log(`\nVersion bumped: ${currentVersion} -> ${version}`);
 } else {
   console.log('\nSome files were skipped.');
   process.exit(1);

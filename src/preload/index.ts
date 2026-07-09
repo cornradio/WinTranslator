@@ -51,6 +51,9 @@ const electronAPI: ElectronAPI = {
       return () => ipcRenderer.removeListener(IPC.SETTINGS_UPDATED, handler);
     },
   },
+  app: {
+    restart: () => ipcRenderer.invoke(IPC.APP_RESTART),
+  },
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

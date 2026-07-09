@@ -95,6 +95,9 @@ export interface ElectronAPI {
     close(): Promise<void>;
     onUpdated(callback: (data: Partial<AppSettings>) => void): () => void;
   };
+  app: {
+    restart(): Promise<void>;
+  };
 }
 
 declare global {

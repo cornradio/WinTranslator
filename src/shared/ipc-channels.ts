@@ -16,6 +16,7 @@ export const IPC = {
   HISTORY_CLEAR: 'history:clear',
   CLIPBOARD_CAPTURE: 'clipboard:capture',
   OPEN_URL: 'shell:open-url',
+  APP_RESTART: 'app:restart',
 
   // Main -> Renderer (send/on)
   POPUP_SHOW_TEXT: 'popup:show-text',

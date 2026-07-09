@@ -68,6 +68,12 @@ export function registerIpcHandlers(): void {
     shell.openExternal(url);
   });
 
+  // Restart the app (used by the "Test Restart" button in Settings)
+  ipcMain.handle(IPC.APP_RESTART, () => {
+    app.relaunch();
+    app.quit();
+  });
+
   ipcMain.handle(IPC.POPUP_SET_VIBRANCY, (_event, enabled: boolean) => {
     const win = getPopupWindow();
     if (win && !win.isDestroyed() && process.platform === 'darwin') {

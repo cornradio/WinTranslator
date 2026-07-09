@@ -5,24 +5,41 @@ import * as path from 'path';
 import { createTray, destroyTray } from './tray';
 import { registerAllHotkeys, unregisterAllHotkeys, setGroupHandler } from './hotkeys';
 import { captureSelectedText } from './clipboard';
-import { createPopupWindow, showPopupAtCursor, showPopupForHistory, togglePopup, isPopupVisible } from './windows/popup-window';
+import { createPopupWindow, showPopupAtCursor, showPopupForHistory, hidePopup, isPopupVisible, getPopupWindow } from './windows/popup-window';
 import { createSettingsWindow } from './windows/settings-window';
 import { registerIpcHandlers } from './ipc-handlers';
+import { activateCachedApp } from './clipboard';
+import { IPC } from '../shared/ipc-channels';
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) app.quit();
 
 async function handleGroupAction(groupId: string): Promise<void> {
-  console.log(`[action] Group ${groupId} triggered, popup visible: ${isPopupVisible()}`);
+  const wasVisible = isPopupVisible();
+  console.log(`[action] Group ${groupId} triggered, popup visible: ${wasVisible}`);
 
-  // Toggle: if popup is already visible, hide it
-  if (!togglePopup()) {
-    console.log('[action] Popup was visible → hidden');
-    return;
+  let text = '';
+
+  if (wasVisible && process.platform === 'darwin') {
+    // macOS: activate the cached frontmost app via osascript.
+    // The popup stays visible — no hide/show flicker.
+    // After activation, the user's app has focus, so Cmd+C targets it.
+    const activated = await activateCachedApp();
+    if (activated) {
+      text = await captureSelectedText();
+    } else {
+      // Fallback: hide popup to return focus, then capture
+      hidePopup();
+      text = await captureSelectedText();
+    }
+  } else {
+    // Windows/Linux (or first show): hide popup if visible to return focus
+    if (wasVisible) {
+      hidePopup();
+      console.log('[action] Popup was visible → hidden for fresh capture');
+    }
+    text = await captureSelectedText();
   }
-
-  // Capture text FIRST (popup not shown yet, focus stays on user's app)
-  let text = await captureSelectedText();
 
   // Fallback to clipboard
   if (!text || !text.trim()) {
@@ -34,10 +51,20 @@ async function handleGroupAction(groupId: string): Promise<void> {
 
   if (!text || !text.trim()) {
     console.log('[action] No text available');
+    // On macOS activation path, popup is still visible — keep it as is
     return;
   }
 
-  showPopupAtCursor(text, groupId);
+  if (wasVisible && process.platform === 'darwin') {
+    // Update popup in place — no repositioning, just send new text
+    const win = getPopupWindow();
+    if (win && !win.isDestroyed()) {
+      win.webContents.send(IPC.POPUP_SHOW_TEXT, { text, groupId });
+      console.log(`[action] Updated popup in place (group: ${groupId}, ${text.length} chars)`);
+    }
+  } else {
+    showPopupAtCursor(text, groupId);
+  }
 }
 
 app.whenReady().then(() => {
@@ -56,6 +83,9 @@ app.whenReady().then(() => {
   registerIpcHandlers();
 
   const popup = createPopupWindow();
+  // Explicitly hide popup on startup — prevents any window from briefly
+  // flashing during auto-launch (the "strange popup" issue).
+  popup.hide();
   popup.webContents.on('did-finish-load', () => console.log('[popup] Initial page loaded'));
   popup.webContents.on('did-fail-load', (_e, code, desc) => {
     console.error(`[popup] Load FAILED: ${code} ${desc}`);

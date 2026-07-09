@@ -77,7 +77,7 @@ export default function GeneralTab({ autoHideSeconds, onChangeAutoHide, autoStar
       {/* Launch at Login */}
       <div>
         <div style={labelStyle}>Launch at Login</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
           <div
             onClick={() => onChangeAutoStart(!autoStart)}
             style={{
@@ -93,6 +93,13 @@ export default function GeneralTab({ autoHideSeconds, onChangeAutoHide, autoStar
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
             {autoStart ? 'App will start automatically at login' : 'Manual launch required'}
           </span>
+        </div>
+        <button onClick={() => window.electronAPI?.app.restart()}
+          style={{ fontSize: 11, padding: '4px 12px' }}>
+          Test Restart
+        </button>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+          Quits and relaunches the app to verify startup behavior
         </div>
       </div>
 

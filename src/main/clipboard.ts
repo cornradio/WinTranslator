@@ -5,6 +5,61 @@ import { promisify } from 'util';
 const execFileAsync = promisify(execFile);
 let isCapturing = false;
 
+// Cached frontmost app (the user's app) — set when popup is first shown,
+// used to re-activate it before subsequent captures (avoids hiding the popup).
+let cachedFrontmost: { bundleId: string; name: string } | null = null;
+
+export function setCachedFrontmost(app: { bundleId: string; name: string } | null): void {
+  cachedFrontmost = app;
+}
+
+export function getCachedFrontmost(): { bundleId: string; name: string } | null {
+  return cachedFrontmost;
+}
+
+/**
+ * Get the current frontmost application on macOS.
+ * Returns null on other platforms.
+ */
+export async function getFrontmostApp(): Promise<{ bundleId: string; name: string } | null> {
+  if (process.platform !== 'darwin') return null;
+  try {
+    const { stdout } = await execFileAsync('osascript', ['-e',
+      'tell application "System Events" to get {bundle identifier, name} of first application process whose frontmost is true',
+    ], { timeout: 2000 });
+    const parts = stdout.trim().split(', ');
+    if (parts.length >= 2 && parts[0]) {
+      return { bundleId: parts[0], name: parts[1] };
+    }
+  } catch (err) {
+    console.warn('[clipboard] getFrontmostApp failed:', (err as Error).message);
+  }
+  return null;
+}
+
+/**
+ * Activate a previously cached app via NSAppleScript.
+ * This brings the app to the foreground so that Cmd+C (sent by nut-js)
+ * targets the user's app, not our popup window.
+ * The popup stays visible — no flicker.
+ */
+export async function activateCachedApp(): Promise<boolean> {
+  if (!cachedFrontmost || process.platform !== 'darwin') return false;
+  try {
+    // NSAppleScript via osascript — activate by bundle ID
+    await execFileAsync('osascript', ['-e',
+      `tell application id "${cachedFrontmost.bundleId}" to activate`,
+    ], { timeout: 2000 });
+    // Brief wait for the app switch to complete
+    await sleep(120);
+    console.log(`[clipboard] Activated cached app: ${cachedFrontmost.name}`);
+    return true;
+  } catch (err) {
+    console.warn('[clipboard] activateCachedApp failed:', (err as Error).message);
+    return false;
+  }
+}
+
 export async function captureSelectedText(): Promise<string> {
   if (isCapturing) return '';
   isCapturing = true;
