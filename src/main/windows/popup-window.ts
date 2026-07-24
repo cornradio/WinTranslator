@@ -42,9 +42,14 @@ export function createPopupWindow(): BrowserWindow {
 
   popupWindow.setAlwaysOnTop(true, 'screen-saver');
 
-  // macOS: show popup in all Spaces including fullscreen Spaces,
-  // so pressing the hotkey in a fullscreen app doesn't switch back to the desktop.
-  if (process.platform === 'darwin') {
+  // Show popup on every virtual desktop / Space, so the hotkey always pops it
+  // up on whichever desktop the user is currently on, instead of switching
+  // back to the desktop it was originally created/shown on.
+  // - macOS: covers Spaces, including fullscreen Spaces.
+  // - Windows: Electron 28+ implements this via the virtual desktop pinning
+  //   API (IVirtualDesktopPinnedApps) — without it, a hidden/shown window
+  //   stays pinned to the desktop that was active when it was first shown.
+  if (process.platform === 'darwin' || process.platform === 'win32') {
     popupWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   }
 
