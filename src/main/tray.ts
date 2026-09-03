@@ -57,7 +57,7 @@ export function rebuildTrayMenu(): void {
 
   menuItems.push(
     { type: 'separator' },
-    { label: 'History', click: () => historyHandler?.() },
+    { label: 'History', click: () => { settingsHandler?.(); historyHandler?.(); } },
     { label: 'Settings...', accelerator: settingsAccelerator, click: () => settingsHandler?.() },
     { type: 'separator' },
     { label: 'Quit', click: () => app.quit() },

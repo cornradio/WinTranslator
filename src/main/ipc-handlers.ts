@@ -6,6 +6,7 @@ import {
   getHistory,
   addHistoryEntry,
   deleteHistoryEntry,
+  toggleHistoryStar,
   clearHistory,
   exportFunctions,
   importFunctions,
@@ -94,6 +95,9 @@ export function registerIpcHandlers(): void {
   });
   ipcMain.handle(IPC.HISTORY_DELETE, (_event, id: string) => {
     notifyHistoryUpdated(deleteHistoryEntry(id));
+  });
+  ipcMain.handle(IPC.HISTORY_TOGGLE_STAR, (_event, id: string) => {
+    notifyHistoryUpdated(toggleHistoryStar(id));
   });
   ipcMain.handle(IPC.HISTORY_CLEAR, () => {
     clearHistory();

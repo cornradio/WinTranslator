@@ -55,3 +55,7 @@ git push && git push --tags
 Actions 会并行编译 Windows / macOS / Linux 三个平台，完成后自动上传到对应 tag 的 GitHub Release 页面。
 
 也可以去 GitHub → Actions → Build and Release → Run workflow 手动触发。
+
+## 删除垃圾文件
+
+Get-ChildItem -Recurse -Filter "._*" -File | Remove-Item -Force

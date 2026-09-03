@@ -36,6 +36,7 @@ const electronAPI: ElectronAPI = {
     getAll: () => ipcRenderer.invoke(IPC.HISTORY_GET),
     add: (entry: TranslationEntry) => ipcRenderer.invoke(IPC.HISTORY_ADD, entry),
     delete: (id: string) => ipcRenderer.invoke(IPC.HISTORY_DELETE, id),
+    toggleStar: (id: string) => ipcRenderer.invoke(IPC.HISTORY_TOGGLE_STAR, id),
     clear: () => ipcRenderer.invoke(IPC.HISTORY_CLEAR),
     onUpdated: (callback: (entries: TranslationEntry[]) => void) => {
       const handler = (_event: Electron.IpcRendererEvent, entries: TranslationEntry[]) => callback(entries);
@@ -49,6 +50,11 @@ const electronAPI: ElectronAPI = {
       const handler = (_event: Electron.IpcRendererEvent, data: Partial<AppSettings>) => callback(data);
       ipcRenderer.on(IPC.SETTINGS_UPDATED, handler);
       return () => ipcRenderer.removeListener(IPC.SETTINGS_UPDATED, handler);
+    },
+    onShowHistory: (callback: () => void) => {
+      const handler = () => callback();
+      ipcRenderer.on(IPC.SETTINGS_SHOW_HISTORY, handler);
+      return () => ipcRenderer.removeListener(IPC.SETTINGS_SHOW_HISTORY, handler);
     },
   },
   app: {

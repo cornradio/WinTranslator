@@ -5,7 +5,7 @@ import * as path from 'path';
 import { createTray, destroyTray } from './tray';
 import { registerAllHotkeys, unregisterAllHotkeys, setGroupHandler } from './hotkeys';
 import { captureSelectedText } from './clipboard';
-import { createPopupWindow, showPopupAtCursor, showPopupForHistory, hidePopup, isPopupVisible, getPopupWindow } from './windows/popup-window';
+import { createPopupWindow, showPopupAtCursor, hidePopup, isPopupVisible, getPopupWindow } from './windows/popup-window';
 import { createSettingsWindow } from './windows/settings-window';
 import { registerIpcHandlers } from './ipc-handlers';
 import { activateCachedApp } from './clipboard';
@@ -98,7 +98,19 @@ app.whenReady().then(() => {
   createTray(
     (groupId) => handleGroupAction(groupId),
     () => createSettingsWindow(),
-    () => showPopupForHistory(),
+    () => {
+      const { getSettingsWindow } = require('./windows/settings-window');
+      const win = getSettingsWindow();
+      if (win && !win.isDestroyed()) {
+        if (win.webContents.isLoading()) {
+          win.webContents.once('did-finish-load', () => {
+            setTimeout(() => win.webContents.send(IPC.SETTINGS_SHOW_HISTORY), 100);
+          });
+        } else {
+          win.webContents.send(IPC.SETTINGS_SHOW_HISTORY);
+        }
+      }
+    },
   );
 
   // First-run: open settings + README so user knows how to set up.

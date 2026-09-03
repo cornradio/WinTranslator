@@ -18,6 +18,7 @@ bilibili视频教程 https://www.bilibili.com/video/BV1xnji6pEzj
 ### macOS
 
 当前 macOS 包是 unsigned 本地包，没有做 Apple Developer ID 签名和公证。如果系统拦截启动--如提示损坏等，需要执行命令：
+
 ```
 xattr -cr /Applications/WinTranslator.app
 ```
@@ -71,3 +72,7 @@ Settings → **Functions** 标签页可以：修改快捷键、编辑翻译提�
 Settings → **Appearance** 标签页可以：换主题、调透明度、改圆角大小、设置自动消失时间。
 
 参考 [functions.md](functions.md) 里的示例.
+
+
+
+

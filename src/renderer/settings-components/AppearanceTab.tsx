@@ -22,132 +22,110 @@ export default function AppearanceTab({ settings, onChange }: AppearanceTabProps
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Theme */}
-      <Section title="Theme">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+      <div className="settings-section">
+        <div className="settings-section-title">Theme</div>
+        <div className="theme-grid">
           {themes.map((t) => (
             <div
               key={t.value}
+              className={`theme-card ${settings.theme === t.value ? 'active' : ''}`}
               onClick={() => handleChange('theme', t.value)}
-              style={{
-                padding: '12px',
-                background: t.preview,
-                border: settings.theme === t.value ? '2px solid #0a84ff' : '2px solid rgba(128,128,128,0.2)',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'border-color 0.15s',
-              }}
+              style={{ background: t.preview }}
             >
-              <div style={{ fontSize: '13px', fontWeight: 600, color: t.text, marginBottom: '4px' }}>
-                {t.label}
-              </div>
-              <div style={{ fontSize: '11px', color: t.text, opacity: 0.6 }}>
-                {t.desc}
-              </div>
+              <div className="theme-card-label" style={{ color: t.text }}>{t.label}</div>
+              <div className="theme-card-desc" style={{ color: t.text }}>{t.desc}</div>
             </div>
           ))}
         </div>
-      </Section>
+      </div>
 
-      {/* Opacity */}
-      <Section title={`Opacity: ${Math.round(settings.opacity * 100)}%`}>
-        <input
-          type="range"
-          min={10}
-          max={100}
-          value={Math.round(settings.opacity * 100)}
-          onChange={(e) => handleChange('opacity', Number(e.target.value) / 100)}
-          style={{ width: '100%', accentColor: '#0a84ff' }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
-          <span>10%</span>
-          <span>100%</span>
-        </div>
-      </Section>
+      {/* Opacity & Blur */}
+      <div className="settings-section">
+        <div className="settings-section-title">Transparency</div>
 
-      {/* Blur Effect (macOS vibrancy) */}
-      <Section title="Blur Effect">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            onClick={() => handleChange('blurEnabled', !settings.blurEnabled)}
-            style={{
-              width: '40px',
-              height: '22px',
-              borderRadius: '11px',
-              background: settings.blurEnabled ? '#0a84ff' : 'rgba(255,255,255,0.15)',
-              cursor: 'pointer',
-              position: 'relative',
-              transition: 'background 0.2s',
-            }}
-          >
-            <div style={{
-              width: '18px',
-              height: '18px',
-              borderRadius: '50%',
-              background: '#fff',
-              position: 'absolute',
-              top: '2px',
-              left: settings.blurEnabled ? '20px' : '2px',
-              transition: 'left 0.2s',
-            }} />
+        <div className="settings-field">
+          <label className="settings-field-label">Opacity: {Math.round(settings.opacity * 100)}%</label>
+          <div className="settings-slider-row">
+            <input
+              type="range"
+              min={10}
+              max={100}
+              value={Math.round(settings.opacity * 100)}
+              onChange={(e) => handleChange('opacity', Number(e.target.value) / 100)}
+            />
+            <span className="settings-slider-value">{Math.round(settings.opacity * 100)}%</span>
           </div>
-          <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
-            {settings.blurEnabled ? 'Native blur enabled (macOS)' : 'Disabled — using opacity'}
-          </span>
         </div>
-      </Section>
 
-      {/* Border Radius */}
-      <Section title={`Border Radius: ${settings.borderRadius}px`}>
-        <input
-          type="range"
-          min={0}
-          max={24}
-          value={settings.borderRadius}
-          onChange={(e) => handleChange('borderRadius', Number(e.target.value))}
-          style={{ width: '100%', accentColor: '#0a84ff' }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
-          <span>0px</span>
-          <span>24px</span>
+        <div className="settings-row" style={{ marginTop: 4 }}>
+          <div>
+            <div className="settings-row-label">Blur Effect</div>
+            <div className="settings-row-hint">
+              {settings.blurEnabled ? 'Native blur enabled (macOS)' : 'Disabled — using opacity only'}
+            </div>
+          </div>
+          <button
+            className={`settings-toggle ${settings.blurEnabled ? 'on' : ''}`}
+            onClick={() => handleChange('blurEnabled', !settings.blurEnabled)}
+          >
+            <div className="settings-toggle-knob" />
+          </button>
         </div>
-      </Section>
+      </div>
 
-      {/* Border Width */}
-      <Section title={`Border Width: ${settings.borderWidth}px`}>
-        <input
-          type="range"
-          min={0}
-          max={3}
-          step={0.5}
-          value={settings.borderWidth}
-          onChange={(e) => handleChange('borderWidth', Number(e.target.value))}
-          style={{ width: '100%', accentColor: '#0a84ff' }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
-          <span>0px</span>
-          <span>3px</span>
+      {/* Border */}
+      <div className="settings-section">
+        <div className="settings-section-title">Border</div>
+
+        <div className="settings-field">
+          <label className="settings-field-label">Radius: {settings.borderRadius}px</label>
+          <div className="settings-slider-row">
+            <input
+              type="range"
+              min={0}
+              max={24}
+              value={settings.borderRadius}
+              onChange={(e) => handleChange('borderRadius', Number(e.target.value))}
+            />
+            <span className="settings-slider-value">{settings.borderRadius}px</span>
+          </div>
         </div>
-      </Section>
 
-      {/* Live Preview */}
-      <Section title="Preview">
+        <div className="settings-field">
+          <label className="settings-field-label">Width: {settings.borderWidth}px</label>
+          <div className="settings-slider-row">
+            <input
+              type="range"
+              min={0}
+              max={3}
+              step={0.5}
+              value={settings.borderWidth}
+              onChange={(e) => handleChange('borderWidth', Number(e.target.value))}
+            />
+            <span className="settings-slider-value">{settings.borderWidth}px</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div className="settings-section">
+        <div className="settings-section-title">Preview</div>
         <div style={{
-          padding: '16px',
+          padding: 14,
           background: getThemeBg(settings.theme, settings.opacity),
           border: `${settings.borderWidth}px solid ${isThemeDark(settings.theme) ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'}`,
           borderRadius: `${settings.borderRadius}px`,
           boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
           color: isThemeDark(settings.theme) ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.85)',
-          fontSize: '12px',
-          lineHeight: '1.6',
+          fontSize: 12,
+          lineHeight: 1.6,
         }}>
-          <div style={{ fontWeight: 600, marginBottom: '4px' }}>Translation Preview</div>
-          <div style={{ opacity: 0.7 }}>This is how the popup will look with your current appearance settings.</div>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>Translation Preview</div>
+          <div style={{ opacity: 0.7 }}>This is how the popup will look with your current settings.</div>
         </div>
-      </Section>
+      </div>
     </div>
   );
 }
@@ -159,22 +137,4 @@ export function getThemeBg(theme: Theme, opacity: number): string {
     case 'paper': return `rgba(248, 244, 236, ${opacity})`;
     case 'light': return `rgba(245, 245, 247, ${opacity})`;
   }
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div style={{
-        fontSize: '11px',
-        fontWeight: 600,
-        color: 'rgba(255,255,255,0.55)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.3px',
-        marginBottom: '10px',
-      }}>
-        {title}
-      </div>
-      {children}
-    </div>
-  );
 }

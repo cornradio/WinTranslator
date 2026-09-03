@@ -5,10 +5,20 @@ import AIConfigTab from '../settings-components/AIConfigTab';
 import FunctionsTab from '../settings-components/FunctionsTab';
 import AppearanceTab from '../settings-components/AppearanceTab';
 import GeneralTab from '../settings-components/GeneralTab';
+import HistoryTab from '../settings-components/HistoryTab';
+import '../styles/settings.css';
 
-type Tab = 'ai' | 'functions' | 'appearance' | 'general';
+type Tab = 'ai' | 'functions' | 'appearance' | 'general' | 'history';
 
 const api = window.electronAPI;
+
+const tabs: { key: Tab; label: string; icon: string }[] = [
+  { key: 'ai', label: 'AI', icon: '\u{1F916}' },
+  { key: 'functions', label: 'Functions', icon: '\u{26A1}' },
+  { key: 'appearance', label: 'Appearance', icon: '\u{1F3A8}' },
+  { key: 'general', label: 'General', icon: '\u{2699}\u{FE0F}' },
+  { key: 'history', label: 'History', icon: '\u{1F4CB}' },
+];
 
 export default function SettingsApp() {
   const [activeTab, setActiveTab] = useState<Tab>('ai');
@@ -20,7 +30,8 @@ export default function SettingsApp() {
     if (!api) { setReady(true); return; }
     api.config.getAll().then((s) => { setSettings(s); setReady(true); }).catch(() => setReady(true));
     const unsub = api.settings.onUpdated((data) => setSettings((prev) => ({ ...prev, ...data })));
-    return () => unsub();
+    const unsubHistory = api.settings.onShowHistory(() => setActiveTab('history'));
+    return () => { unsub(); unsubHistory(); };
   }, []);
 
   const handleSave = async (updated: Partial<AppSettings>) => {
@@ -74,71 +85,75 @@ export default function SettingsApp() {
     input.click();
   };
 
-  const tabs: { key: Tab; label: string; icon: string }[] = [
-    { key: 'ai', label: 'AI', icon: '\u{1F916}' },
-    { key: 'functions', label: 'Functions', icon: '\u{26A1}' },
-    { key: 'appearance', label: 'Appearance', icon: '\u{1F3A8}' },
-    { key: 'general', label: 'General', icon: '\u{2699}\u{FE0F}' },
-  ];
-
   if (!ready) {
     return <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>Loading...</div>;
   }
 
+  const activeLabel = tabs.find((t) => t.key === activeTab)?.label ?? '';
+  const isHistory = activeTab === 'history';
+
   return (
-    <div style={{ width: '100%', height: '100vh', background: '#1c1c1e', color: 'rgba(255,255,255,0.92)', display: 'flex', flexDirection: 'column' }}>
-      {/* Tab bar */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '0 12px', background: 'rgba(255,255,255,0.03)' }}>
+    <div className="settings-root">
+      {/* Sidebar */}
+      <div className="settings-sidebar">
+        <div className="settings-sidebar-title">Settings</div>
         {tabs.map((tab) => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-            background: 'none', border: 'none',
-            borderBottom: activeTab === tab.key ? '2px solid #0a84ff' : '2px solid transparent',
-            color: activeTab === tab.key ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.55)',
-            padding: '10px 12px', cursor: 'pointer', fontSize: 12,
-            fontWeight: activeTab === tab.key ? 600 : 400,
-            display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap',
-          }}>
-            <span>{tab.icon}</span>{tab.label}
+          <button
+            key={tab.key}
+            className={`settings-nav-item ${activeTab === tab.key ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            <span className="settings-nav-icon">{tab.icon}</span>
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* Tab content */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '16px 20px' }}>
-        {activeTab === 'ai' && (
-          <AIConfigTab settings={settings.ai} onChange={(ai) => { setSettings((p) => ({ ...p, ai })); setDirty(true); }} />
-        )}
-        {activeTab === 'functions' && (
-          <FunctionsTab
-            functions={settings.functions}
-            onChange={(f) => { setSettings((p) => ({ ...p, functions: f })); setDirty(true); }}
-            onExport={handleExport}
-            onImport={handleImport}
-          />
-        )}
-        {activeTab === 'appearance' && (
-          <AppearanceTab
-            settings={settings.appearance}
-            onChange={(a) => { setSettings((p) => ({ ...p, appearance: a })); setDirty(true); }}
-          />
-        )}
-        {activeTab === 'general' && (
-          <GeneralTab
-            autoHideSeconds={settings.popup.autoDismissSeconds}
-            onChangeAutoHide={(s) => { setSettings((p) => ({ ...p, popup: { ...p.popup, autoDismissSeconds: s } })); setDirty(true); }}
-            autoStart={settings.autoStart}
-            onChangeAutoStart={(v) => { setSettings((p) => ({ ...p, autoStart: v })); setDirty(true); }}
-            onReset={handleReset}
-          />
-        )}
-      </div>
-
-      {/* Bottom bar */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => api?.settings.close()}>Cancel</button>
-          <button className="primary" disabled={!dirty} onClick={() => handleSave(settings)}>Save</button>
+      {/* Content */}
+      <div className="settings-content">
+        <div className="settings-header">
+          <h2>{activeLabel}</h2>
         </div>
+
+        <div className="settings-body" style={isHistory ? { padding: 0, overflow: 'hidden' } : undefined}>
+          {activeTab === 'ai' && (
+            <AIConfigTab settings={settings.ai} onChange={(ai) => { setSettings((p) => ({ ...p, ai })); setDirty(true); }} />
+          )}
+          {activeTab === 'functions' && (
+            <FunctionsTab
+              functions={settings.functions}
+              onChange={(f) => { setSettings((p) => ({ ...p, functions: f })); setDirty(true); }}
+              onExport={handleExport}
+              onImport={handleImport}
+            />
+          )}
+          {activeTab === 'appearance' && (
+            <AppearanceTab
+              settings={settings.appearance}
+              onChange={(a) => { setSettings((p) => ({ ...p, appearance: a })); setDirty(true); }}
+            />
+          )}
+          {activeTab === 'general' && (
+            <GeneralTab
+              autoHideSeconds={settings.popup.autoDismissSeconds}
+              onChangeAutoHide={(s) => { setSettings((p) => ({ ...p, popup: { ...p.popup, autoDismissSeconds: s } })); setDirty(true); }}
+              autoStart={settings.autoStart}
+              onChangeAutoStart={(v) => { setSettings((p) => ({ ...p, autoStart: v })); setDirty(true); }}
+              onReset={handleReset}
+            />
+          )}
+          {activeTab === 'history' && (
+            <HistoryTab functions={settings.functions} />
+          )}
+        </div>
+
+        {/* Footer — hide for history tab */}
+        {!isHistory && (
+          <div className="settings-footer">
+            <button onClick={() => api?.settings.close()}>Cancel</button>
+            <button className="primary" disabled={!dirty} onClick={() => handleSave(settings)}>Save</button>
+          </div>
+        )}
       </div>
     </div>
   );

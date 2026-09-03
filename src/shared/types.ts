@@ -23,6 +23,7 @@ export interface TranslationEntry {
   groupName?: string;
   groupIcon?: string;
   promptName?: string;
+  starred?: boolean;
 }
 
 export interface FunctionResult {
@@ -88,12 +89,14 @@ export interface ElectronAPI {
     getAll(): Promise<TranslationEntry[]>;
     add(entry: TranslationEntry): Promise<void>;
     delete(id: string): Promise<void>;
+    toggleStar(id: string): Promise<void>;
     clear(): Promise<void>;
     onUpdated(callback: (entries: TranslationEntry[]) => void): () => void;
   };
   settings: {
     close(): Promise<void>;
     onUpdated(callback: (data: Partial<AppSettings>) => void): () => void;
+    onShowHistory(callback: () => void): () => void;
   };
   app: {
     restart(): Promise<void>;

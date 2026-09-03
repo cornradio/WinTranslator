@@ -2,7 +2,7 @@ import { app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { AppSettings, TranslationEntry } from '../shared/types';
-import { DEFAULT_SETTINGS, HISTORY_MAX_ENTRIES, TEXT_MAX_LENGTH } from '../shared/constants';
+import { DEFAULT_SETTINGS, TEXT_MAX_LENGTH } from '../shared/constants';
 
 interface StoreData {
   settings: AppSettings;
@@ -70,10 +70,17 @@ export function addHistoryEntry(entry: TranslationEntry): TranslationEntry[] {
   entry.sourceText = entry.sourceText.slice(0, TEXT_MAX_LENGTH);
   entry.resultText = entry.resultText.slice(0, TEXT_MAX_LENGTH);
   data.history.unshift(entry);
-  if (data.history.length > HISTORY_MAX_ENTRIES) {
-    data.history.length = HISTORY_MAX_ENTRIES;
-  }
   saveStore();
+  return data.history;
+}
+
+export function toggleHistoryStar(id: string): TranslationEntry[] {
+  const data = loadStore();
+  const entry = data.history.find((e) => e.id === id);
+  if (entry) {
+    entry.starred = !entry.starred;
+    saveStore();
+  }
   return data.history;
 }
 

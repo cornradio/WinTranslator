@@ -99,117 +99,95 @@ export default function AIConfigTab({ settings, onChange }: AIConfigTabProps) {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <Field label="API Format">
-        <div style={{ display: 'flex', gap: '0' }}>
-          {providers.map((p) => (
-            <button
-              key={p.value}
-              onClick={() => handleChange('provider', p.value)}
-              style={{
-                flex: 1,
-                padding: '8px',
-                background: settings.provider === p.value ? 'var(--accent-blue)' : 'rgba(255,255,255,0.06)',
-                border: '1px solid ' + (settings.provider === p.value ? 'var(--accent-blue)' : 'rgba(255,255,255,0.12)'),
-                color: settings.provider === p.value ? 'white' : 'var(--text-secondary)',
-                borderRadius: p.value === 'anthropic' ? 'var(--radius-sm) 0 0 var(--radius-sm)' : '0 var(--radius-sm) var(--radius-sm) 0',
-                cursor: 'pointer',
-                fontWeight: settings.provider === p.value ? 600 : 400,
-              }}
-            >
-              {p.label}
-            </button>
-          ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Provider + Connection */}
+      <div className="settings-section">
+        <div className="settings-section-title">Provider</div>
+        <div className="settings-field">
+          <div className="settings-segmented">
+            {providers.map((p) => (
+              <button
+                key={p.value}
+                className={settings.provider === p.value ? 'active' : ''}
+                onClick={() => handleChange('provider', p.value)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </Field>
 
-      <Field label="Base URL">
-        <input
-          type="text"
-          value={settings.baseUrl}
-          onChange={(e) => handleChange('baseUrl', e.target.value)}
-          placeholder="https://api.anthropic.com"
-          style={{ width: '100%' }}
-        />
-      </Field>
-
-      <Field label="API Key">
-        <input
-          type="password"
-          value={settings.apiKey}
-          onChange={(e) => handleChange('apiKey', e.target.value)}
-          placeholder="Enter API key"
-          style={{ width: '100%' }}
-        />
-      </Field>
-
-      <Field label="Model">
-        <input
-          type="text"
-          value={settings.model}
-          onChange={(e) => handleChange('model', e.target.value)}
-          placeholder="claude-sonnet-4-20250514"
-          style={{ width: '100%' }}
-        />
-      </Field>
-
-      <Field label="Max Output Tokens">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="settings-field">
+          <label className="settings-field-label">Base URL</label>
           <input
-            type="range"
-            min={256}
-            max={16384}
-            step={256}
-            value={settings.maxTokens}
-            onChange={(e) => onChange({ ...settings, maxTokens: Number(e.target.value) })}
-            style={{ flex: 1 }}
-          />
-          <input
-            type="number"
-            value={settings.maxTokens}
-            min={256}
-            max={16384}
-            step={256}
-            onChange={(e) => onChange({ ...settings, maxTokens: Number(e.target.value) })}
-            style={{ width: 80, textAlign: 'center' }}
+            type="text"
+            value={settings.baseUrl}
+            onChange={(e) => handleChange('baseUrl', e.target.value)}
+            placeholder="https://api.anthropic.com"
           />
         </div>
-      </Field>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div
-          onClick={() => onChange({ ...settings, thinking: !settings.thinking })}
-          style={{
-            width: 36, height: 20, borderRadius: 10, cursor: 'pointer', position: 'relative', flexShrink: 0,
-            background: settings.thinking ? 'var(--accent-blue)' : 'rgba(255,255,255,0.15)', transition: 'background 0.2s',
-          }}>
-          <div style={{
-            width: 16, height: 16, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2,
-            left: settings.thinking ? 18 : 2, transition: 'left 0.2s',
-          }} />
+        <div className="settings-field">
+          <label className="settings-field-label">API Key</label>
+          <input
+            type="password"
+            value={settings.apiKey}
+            onChange={(e) => handleChange('apiKey', e.target.value)}
+            placeholder="Enter API key"
+          />
         </div>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 2 }}>Thinking Mode</div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>DeepSeek reasoning chain (slower, higher cost)</div>
+
+        <div className="settings-field">
+          <label className="settings-field-label">Model</label>
+          <input
+            type="text"
+            value={settings.model}
+            onChange={(e) => handleChange('model', e.target.value)}
+            placeholder="claude-sonnet-4-20250514"
+          />
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button onClick={handleTest} disabled={testing || !settings.apiKey}>
-          {testing ? 'Testing...' : 'Test Connection'}
-        </button>
-        {testResult && (
-          <span style={{
-            fontSize: '12px',
-            color: testResult.startsWith('OK') ? 'var(--accent-green)' : 'var(--text-error)',
-          }}>
-            {testResult}
-          </span>
-        )}
+      {/* Parameters */}
+      <div className="settings-section">
+        <div className="settings-section-title">Parameters</div>
+
+        <div className="settings-field">
+          <label className="settings-field-label">Max Output Tokens</label>
+          <div className="settings-slider-row">
+            <input
+              type="range"
+              min={256}
+              max={16384}
+              step={256}
+              value={settings.maxTokens}
+              onChange={(e) => onChange({ ...settings, maxTokens: Number(e.target.value) })}
+            />
+            <span className="settings-slider-value">{settings.maxTokens}</span>
+          </div>
+        </div>
+
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">Thinking Mode</div>
+            <div className="settings-row-hint">DeepSeek reasoning chain (slower, higher cost)</div>
+          </div>
+          <button
+            className={`settings-toggle ${settings.thinking ? 'on' : ''}`}
+            onClick={() => onChange({ ...settings, thinking: !settings.thinking })}
+          >
+            <div className="settings-toggle-knob" />
+          </button>
+        </div>
       </div>
 
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* Test & Balance */}
+      <div className="settings-section">
+        <div className="settings-section-title">Connection</div>
+        <div className="settings-actions">
+          <button onClick={handleTest} disabled={testing || !settings.apiKey}>
+            {testing ? 'Testing...' : 'Test Connection'}
+          </button>
           <button onClick={handleCheckBalance} disabled={checkingBalance || !settings.apiKey}>
             {checkingBalance ? 'Checking...' : 'Check Balance'}
           </button>
@@ -219,33 +197,35 @@ export default function AIConfigTab({ settings, onChange }: AIConfigTabProps) {
             </button>
           )}
         </div>
-        {balanceError && (
-          <div style={{ fontSize: '12px', color: 'var(--text-error)', marginTop: '8px' }}>
-            {balanceError}
+        {testResult && (
+          <div className={`settings-actions result ${testResult.startsWith('OK') ? 'ok' : 'error'}`}
+            style={{ marginTop: 8, fontSize: 12 }}>
+            {testResult}
           </div>
         )}
+        {balanceError && (
+          <div style={{ fontSize: 12, color: 'var(--text-error)', marginTop: 8 }}>{balanceError}</div>
+        )}
         {balanceData && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
             {balanceData.map((info, i) => (
               <div key={i} style={{
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '10px 14px',
+                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 6, padding: '8px 12px', fontSize: 12,
               }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.3px', marginBottom: '8px' }}>
+                <div style={{ fontWeight: 600, color: 'rgba(255,255,255,0.45)', fontSize: 10, textTransform: 'uppercase', marginBottom: 6 }}>
                   {info.currency}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Total</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>Total</span>
                   <span style={{ fontWeight: 500 }}>{Number(info.total_balance).toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '2px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Granted</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 1 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>Granted</span>
                   <span>{Number(info.granted_balance).toFixed(2)}</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Topped Up</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>Topped Up</span>
                   <span>{Number(info.topped_up_balance).toFixed(2)}</span>
                 </div>
               </div>
@@ -253,25 +233,6 @@ export default function AIConfigTab({ settings, onChange }: AIConfigTabProps) {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={{
-        display: 'block',
-        fontSize: '11px',
-        fontWeight: 600,
-        color: 'var(--text-secondary)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.3px',
-        marginBottom: '6px',
-      }}>
-        {label}
-      </label>
-      {children}
     </div>
   );
 }

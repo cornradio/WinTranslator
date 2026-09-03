@@ -41,7 +41,7 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
       prompts: [{
         id: crypto.randomUUID(),
         name: 'Prompt 1',
-        prompt: '{text}',
+        prompt: 'Process the input text.',
       }],
     };
     onChange([...functions, newGroup]);
@@ -60,7 +60,7 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
     const newPrompt: PromptTemplate = {
       id: crypto.randomUUID(),
       name: `Prompt ${group.prompts.length + 1}`,
-      prompt: '{text}',
+      prompt: 'Process the input text.',
     };
     updateGroup(groupId, { prompts: [...group.prompts, newPrompt] });
   };
@@ -90,10 +90,10 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
     // (e.g. "KeyE" → "E", "Digit1" → "1", "F5" → "F5").
     const resolveKey = (e: KeyboardEvent): string => {
       const { key: rawKey, code } = e;
-      if (rawKey === 'Dead' || (rawKey.length > 1 && !/^[A-Za-z0-9]$/.test(rawKey))) {
+      if (rawKey === 'Dead' || !/^[a-zA-Z0-9]$/.test(rawKey)) {
         if (code.startsWith('Key')) return code.slice(3).toUpperCase();
         if (code.startsWith('Digit')) return code.slice(5);
-        return code; // F5, BracketLeft, ArrowUp, etc.
+        return code;
       }
       return rawKey.toUpperCase();
     };
@@ -276,7 +276,7 @@ export default function FunctionsTab({ functions, onChange, onExport, onImport }
                   onChange={(e) => updatePrompt(selected.id, p.id, { prompt: e.target.value })}
                   rows={4} style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.5, resize: 'vertical' }} />
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
-                  Use {'{text}'} as placeholder for selected text
+                  Selected text is automatically wrapped in {'<input>'} tags and appended
                 </div>
               </div>
             ))}

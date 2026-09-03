@@ -14,6 +14,7 @@ export const IPC = {
   HISTORY_ADD: 'history:add',
   HISTORY_DELETE: 'history:delete',
   HISTORY_CLEAR: 'history:clear',
+  HISTORY_TOGGLE_STAR: 'history:toggle-star',
   CLIPBOARD_CAPTURE: 'clipboard:capture',
   OPEN_URL: 'shell:open-url',
   APP_RESTART: 'app:restart',
@@ -23,5 +24,6 @@ export const IPC = {
   POPUP_SHOW_HISTORY: 'popup:show-history',
   POPUP_DISMISS_TIMER: 'popup:dismiss-timer',
   SETTINGS_UPDATED: 'settings:updated',
+  SETTINGS_SHOW_HISTORY: 'settings:show-history',
   HISTORY_UPDATED: 'history:updated',
 } as const;

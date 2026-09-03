@@ -8,7 +8,6 @@ import { getThemeBg, isThemeDark } from '../settings-components/AppearanceTab';
 import StreamingText from '../components/StreamingText';
 import CopyButton from '../components/CopyButton';
 import ErrorBanner from '../components/ErrorBanner';
-import HistoryList from '../components/HistoryList';
 
 const api = window.electronAPI;
 
@@ -17,8 +16,6 @@ export default function PopupApp() {
   const [groupName, setGroupName] = useState('');
   const [groupIcon, setGroupIcon] = useState('');
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [showHistory, setShowHistory] = useState(false);
-  const [historyVersion, setHistoryVersion] = useState(0);
   const [isDragging] = useState(false);
   const [waitingForText, setWaitingForText] = useState(false);
   const [results, setResults] = useState<FunctionResult[]>([]);
@@ -94,7 +91,7 @@ export default function PopupApp() {
 
       // Shift+C (no modifiers) — toggle chat menu
       if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey && e.key === 'C') {
-        if (!showHistory && results.some((r) => r.text)) {
+        if (results.some((r) => r.text)) {
           e.preventDefault();
           setChatHighlight(0);
           setChatMenuOpen((prev) => !prev);
@@ -103,7 +100,7 @@ export default function PopupApp() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [results, showHistory, chatMenuOpen, chatHighlight]);
+  }, [results, chatMenuOpen, chatHighlight]);
 
   // Listen for incoming text from main process
   useEffect(() => {
@@ -113,7 +110,6 @@ export default function PopupApp() {
       abortControllersRef.current.forEach((c) => c.abort());
       abortControllersRef.current = [];
       setError(null);
-      setShowHistory(false);
 
       if (!data.text) {
         // Waiting for text capture
@@ -140,17 +136,7 @@ export default function PopupApp() {
       startAllPrompts(data.text, group);
     });
 
-    const unsubHistory = api.popup.onShowHistory(() => {
-      abortControllersRef.current.forEach((c) => c.abort());
-      abortControllersRef.current = [];
-      setError(null);
-      setSourceText('');
-      setResults([]);
-      setWaitingForText(false);
-      setShowHistory(true);
-    });
-
-    return () => { unsub(); unsubHistory(); };
+    return () => { unsub(); };
   }, [settings.functions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startAllPrompts = useCallback(
@@ -166,7 +152,8 @@ export default function PopupApp() {
       setResults(initial);
 
       prompts.forEach((prompt, index) => {
-        const userText = prompt.prompt.replace('{text}', text);
+        const promptBody = prompt.prompt.replace('{text}', '').trim();
+        const userText = `<prompt>\n${promptBody}\n</prompt>\n<input>\n${text}\n</input>`;
         let accumulated = '';
 
         const controller = streamLLM({
@@ -217,7 +204,7 @@ export default function PopupApp() {
     [settings.ai]
   );
 
-  useAutoResize([results, showHistory, error, historyVersion]);
+  useAutoResize([results, error]);
 
   useAutoDismiss({
     seconds: settings.popup.autoDismissSeconds,
@@ -291,6 +278,8 @@ export default function PopupApp() {
     padding: '12px 16px',
     height: '100vh',
     overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
     background: bg,
     border: `${ap.borderWidth}px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'}`,
     borderRadius: `${ap.borderRadius}px`,
@@ -312,23 +301,14 @@ export default function PopupApp() {
         marginBottom: '8px', padding: '2px 0',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {showHistory ? (
-            <>
-              <span style={{ fontSize: '14px' }}>{'\u{1F4CB}'}</span>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>History</span>
-            </>
-          ) : (
-            <>
-              <span style={{ fontSize: '14px' }}>{groupIcon || '\u{1F310}'}</span>
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                {groupName || 'Translate'}
-              </span>
-            </>
-          )}
-          {!showHistory && (isStreaming || waitingForText) && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-blue)', animation: 'pulse 1.2s infinite', display: 'inline-block' }} />}
+          <span style={{ fontSize: '14px' }}>{groupIcon || '\u{1F310}'}</span>
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            {groupName || 'Translate'}
+          </span>
+          {(isStreaming || waitingForText) && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-blue)', animation: 'pulse 1.2s infinite', display: 'inline-block' }} />}
         </div>
         <div className="no-drag" style={{ display: 'flex', alignItems: 'center', gap: '6px', position: 'relative' }}>
-          {!showHistory && results.some((r) => r.text) && (
+          {results.some((r) => r.text) && (
             <div ref={chatMenuRef} style={{ position: 'relative' }}>
               <button className="no-drag" onClick={() => setChatMenuOpen(!chatMenuOpen)}
                 style={{ background: 'none', border: 'none', padding: '2px 6px', fontSize: 11, color: 'var(--text-secondary)', cursor: 'pointer' }}>Chat</button>
@@ -359,7 +339,7 @@ export default function PopupApp() {
               )}
             </div>
           )}
-          {!showHistory && results.length === 1 && results[0].text && <CopyButton text={results[0].text} />}
+          {results.length === 1 && results[0].text && <CopyButton text={results[0].text} />}
           {isMac ? (
             <button className="no-drag" onClick={handleHide}
               onMouseEnter={(e) => (e.currentTarget.dataset.hover = 'true')}
@@ -391,7 +371,7 @@ export default function PopupApp() {
       {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       {/* Capturing text loading state */}
-      {waitingForText && !showHistory && (
+      {waitingForText && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 0', justifyContent: 'center' }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-blue)', animation: 'pulse 1s infinite', display: 'inline-block' }} />
           <span style={{ color: 'var(--text-secondary)', fontSize: 12, fontStyle: 'italic' }}>Capturing text...</span>
@@ -399,7 +379,7 @@ export default function PopupApp() {
       )}
 
       {/* Results */}
-      {!waitingForText && !showHistory && results.length > 0 && (
+      {!waitingForText && results.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {results.map((result, idx) => (
             <div key={result.promptId}>
@@ -428,10 +408,8 @@ export default function PopupApp() {
         </div>
       )}
 
-      {showHistory && <HistoryList functions={settings.functions} onLoad={() => setHistoryVersion((v) => v + 1)} />}
-
       {/* Empty state */}
-      {!sourceText && !showHistory && !waitingForText && results.length === 0 && (
+      {!sourceText && !waitingForText && results.length === 0 && (
         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0', fontSize: 12 }}>
           Select text and press a hotkey to translate
         </div>

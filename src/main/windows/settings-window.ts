@@ -13,16 +13,18 @@ export function createSettingsWindow(): BrowserWindow {
   const icon = nativeImage.createFromPath(iconPath);
 
   settingsWindow = new BrowserWindow({
-    width: 600,
+    width: 780,
     height: 660,
     frame: true,
     autoHideMenuBar: true,
     backgroundColor: '#1c1c1e',
     title: 'WinTranslator Settings',
     icon,
-    resizable: false,
-    minimizable: false,
-    maximizable: false,
+    resizable: true,
+    minimizable: true,
+    maximizable: true,
+    minWidth: 600,
+    minHeight: 480,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
