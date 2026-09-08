@@ -1,13 +1,24 @@
 # WinTranslator
 
-<img width="1840" height="984" alt="image" src="https://github.com/user-attachments/assets/42d5e6c5-22df-41ad-8075-f016538be8e6" />
-
 选中文字，按快捷键，弹窗直接出翻译结果。  
 支持自定义prompt和快捷键，根据自己的需求设置不同的AI分析组合（不只局限于翻译领域）。
+[bilibili视频教程](https://www.bilibili.com/video/BV1xnji6pEzj)
 
-bilibili视频教程 https://www.bilibili.com/video/BV1xnji6pEzj
 
-## 安装 / 运行
+## 怎么用
+
+**选中文字 → 按快捷键 → 看结果。** 就这么简单。
+
+- `Alt + T`（`Option + T`）— 翻译 -translate（中英文自动互译）
+- `Alt + R`（`Option + R`）— 润色 -refine（同时给出两种改写风格）
+- 可以自定义任何快捷键和功能。
+- `Esc` — 关掉弹窗
+弹窗会在鼠标位置弹出来，翻译完可以点复制按钮。如果没选中文字，会自动翻译剪贴板里的内容。
+
+
+<img width="509" height="524" alt="image" src="https://github.com/user-attachments/assets/26715728-bba9-40dc-9e69-8dee4752050a" />
+
+## 安装
 
 ### Windows
 
@@ -23,21 +34,6 @@ bilibili视频教程 https://www.bilibili.com/video/BV1xnji6pEzj
 xattr -cr /Applications/WinTranslator.app
 ```
 
-
-
-## 怎么用
-
-**选中文字 → 按快捷键 → 看结果。** 就这么简单。
-
-- `Alt + T`（macOS 上是 `Option + T`）— 翻译 -translate（中英文自动互译）
-- `Alt + R`（macOS 上是 `Option + R`）— 润色 -refine（同时给出两种改写风格）
-- `Esc` — 关掉弹窗
-
-弹窗会在鼠标位置弹出来，翻译完可以点复制按钮。如果没选中文字，会自动翻译剪贴板里的内容。
-
-![alt text](readme-image/image_6ufy1j.png)
-
-![alt text](readme-image/clipboard_1781845960.jpg)
 
 ## 配置 API Key
 
@@ -61,15 +57,10 @@ xattr -cr /Applications/WinTranslator.app
 
 点 **Test Connection**，显示成功就可以用了。
 
-![alt text](readme-image/clipboard_1781845878.jpg)
 
 
 
 ### 自定义功能
-
-Settings → **Functions** 标签页可以：修改快捷键、编辑翻译提示词、新增自己的功能组。提示词里用 `{text}` 代表选中的文字。
-
-Settings → **Appearance** 标签页可以：换主题、调透明度、改圆角大小、设置自动消失时间。
 
 参考 [functions.md](functions.md) 里的示例.
 
