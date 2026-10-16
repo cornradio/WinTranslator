@@ -306,7 +306,7 @@ button.danger { color: #ff453a; border-color: rgba(255, 69, 58, 0.3); background
 }
 .output-icon { font-size: 18px; }
 .output-tools, .prompt-head, .hist-result-head { display: flex; align-items: center; gap: 4px; }
-.prompt-head, .hist-result-head { justify-content: space-between; width: 100%; }
+.prompt-head, .hist-result-head { justify-content: flex-start; gap: 2px; width: auto; }
 .prompt-tools { display: inline-flex; align-items: center; gap: 6px; }
 .pulse {
   display: inline-block;
@@ -381,6 +381,7 @@ button.danger { color: #ff453a; border-color: rgba(255, 69, 58, 0.3); background
 .rail-empty { padding: 28px 12px; color: var(--text-secondary); font-size: 13px; line-height: 1.6; }
 .hist { border-top: 1px solid var(--line); background: transparent; }
 .hist.open {
+  position: relative;
   margin: 10px 0;
   padding: 16px 18px;
   border: 1px solid color-mix(in srgb, var(--text-primary) 22%, transparent);
@@ -396,7 +397,19 @@ button.danger { color: #ff453a; border-color: rgba(255, 69, 58, 0.3); background
   align-items: start;
   padding: 12px 0;
 }
-.hist.open .hist-top { padding: 0; }
+.hist.open .hist-top { display: block; padding: 0; }
+.hist.open .hist-main { padding-right: 64px; }
+.hist.open .star-btn,
+.hist.open .trash-btn {
+  position: absolute;
+  top: 10px;
+  width: 26px;
+  height: 26px;
+}
+.hist.open .star-btn { right: 36px; }
+.hist.open .trash-btn { right: 8px; }
+.hist.open .star-btn svg { width: 15px; height: 15px; }
+.hist.open .trash-btn svg { width: 14px; height: 14px; }
 .hist-main { min-width: 0; }
 .web-app button.hist-open {
   display: block;
