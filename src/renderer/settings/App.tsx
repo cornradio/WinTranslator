@@ -10,7 +10,9 @@ import '../styles/settings.css';
 
 type Tab = 'ai' | 'functions' | 'appearance' | 'general' | 'history';
 
-const api = window.electronAPI;
+function getApi() {
+  return window.electronAPI;
+}
 
 const tabs: { key: Tab; label: string; icon: string }[] = [
   { key: 'ai', label: 'AI', icon: '\u{1F916}' },
@@ -27,6 +29,7 @@ export default function SettingsApp() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    const api = getApi();
     if (!api) { setReady(true); return; }
     api.config.getAll().then((s) => { setSettings(s); setReady(true); }).catch(() => setReady(true));
     const unsub = api.settings.onUpdated((data) => setSettings((prev) => ({ ...prev, ...data })));
@@ -34,9 +37,23 @@ export default function SettingsApp() {
     return () => { unsub(); unsubHistory(); };
   }, []);
 
+  const write = (partial: Partial<AppSettings>) => {
+    setSettings((prev) => ({ ...prev, ...partial }));
+    const api = getApi();
+    if (api?.config.exportConfig) {
+      for (const [key, value] of Object.entries(partial)) {
+        void api.config.set(key, value);
+      }
+      setDirty(false);
+      return;
+    }
+    setDirty(true);
+  };
+
   const handleSave = async (updated: Partial<AppSettings>) => {
     const newSettings = { ...settings, ...updated };
     setSettings(newSettings);
+    const api = getApi();
     if (api) {
       for (const [key, value] of Object.entries(updated)) {
         await api.config.set(key, value);
@@ -47,6 +64,7 @@ export default function SettingsApp() {
 
   const handleReset = async () => {
     setSettings(DEFAULT_SETTINGS);
+    const api = getApi();
     if (api) {
       for (const [key, value] of Object.entries(DEFAULT_SETTINGS)) {
         await api.config.set(key, value);
@@ -55,16 +73,21 @@ export default function SettingsApp() {
     setDirty(false);
   };
 
-  const handleExport = async () => {
-    if (!api) return;
-    const json = await api.config.exportFunctions();
+  const downloadJson = (json: string, filename: string) => {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'wintranslator-functions.json';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleExport = async () => {
+    const api = getApi();
+    if (!api) return;
+    const json = await api.config.exportFunctions();
+    downloadJson(json, 'wintranslator-functions.json');
   };
 
   const handleImport = async () => {
@@ -73,10 +96,13 @@ export default function SettingsApp() {
     input.accept = '.json';
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
+      const api = getApi();
       if (!file || !api) return;
       const text = await file.text();
       try {
         await api.config.importFunctions(text);
+        const next = await api.config.getAll();
+        setSettings(next);
         alert('Functions imported successfully!');
       } catch (err) {
         alert('Import failed: ' + (err as Error).message);
@@ -85,11 +111,14 @@ export default function SettingsApp() {
     input.click();
   };
 
+  const autosave = Boolean(getApi()?.config.exportConfig);
+
   if (!ready) {
     return <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>Loading...</div>;
   }
 
-  const activeLabel = tabs.find((t) => t.key === activeTab)?.label ?? '';
+  const visibleTabs = autosave ? tabs.filter((tab) => tab.key !== 'functions' && tab.key !== 'history') : tabs;
+  const activeLabel = visibleTabs.find((t) => t.key === activeTab)?.label ?? visibleTabs[0]?.label ?? '';
   const isHistory = activeTab === 'history';
 
   return (
@@ -97,7 +126,7 @@ export default function SettingsApp() {
       {/* Sidebar */}
       <div className="settings-sidebar">
         <div className="settings-sidebar-title">Settings</div>
-        {tabs.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.key}
             className={`settings-nav-item ${activeTab === tab.key ? 'active' : ''}`}
@@ -117,12 +146,12 @@ export default function SettingsApp() {
 
         <div className="settings-body" style={isHistory ? { padding: 0, overflow: 'hidden' } : undefined}>
           {activeTab === 'ai' && (
-            <AIConfigTab settings={settings.ai} onChange={(ai) => { setSettings((p) => ({ ...p, ai })); setDirty(true); }} />
+            <AIConfigTab settings={settings.ai} onChange={(ai) => write({ ai })} />
           )}
           {activeTab === 'functions' && (
             <FunctionsTab
               functions={settings.functions}
-              onChange={(f) => { setSettings((p) => ({ ...p, functions: f })); setDirty(true); }}
+              onChange={(f) => write({ functions: f })}
               onExport={handleExport}
               onImport={handleImport}
             />
@@ -130,15 +159,15 @@ export default function SettingsApp() {
           {activeTab === 'appearance' && (
             <AppearanceTab
               settings={settings.appearance}
-              onChange={(a) => { setSettings((p) => ({ ...p, appearance: a })); setDirty(true); }}
+              onChange={(a) => write({ appearance: a })}
             />
           )}
           {activeTab === 'general' && (
             <GeneralTab
               autoHideSeconds={settings.popup.autoDismissSeconds}
-              onChangeAutoHide={(s) => { setSettings((p) => ({ ...p, popup: { ...p.popup, autoDismissSeconds: s } })); setDirty(true); }}
+              onChangeAutoHide={(s) => write({ popup: { ...settings.popup, autoDismissSeconds: s } })}
               autoStart={settings.autoStart}
-              onChangeAutoStart={(v) => { setSettings((p) => ({ ...p, autoStart: v })); setDirty(true); }}
+              onChangeAutoStart={(v) => write({ autoStart: v })}
               onReset={handleReset}
             />
           )}
@@ -148,9 +177,9 @@ export default function SettingsApp() {
         </div>
 
         {/* Footer — hide for history tab */}
-        {!isHistory && (
+        {!isHistory && !autosave && (
           <div className="settings-footer">
-            <button onClick={() => api?.settings.close()}>Cancel</button>
+            <button onClick={() => getApi()?.settings.close()}>Cancel</button>
             <button className="primary" disabled={!dirty} onClick={() => handleSave(settings)}>Save</button>
           </div>
         )}

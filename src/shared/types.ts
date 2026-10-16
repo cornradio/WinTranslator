@@ -24,6 +24,8 @@ export interface TranslationEntry {
   groupIcon?: string;
   promptName?: string;
   starred?: boolean;
+  /** Groups parallel prompt results from one web query. */
+  queryId?: string;
 }
 
 export interface FunctionResult {
@@ -74,6 +76,8 @@ export interface ElectronAPI {
     set(key: string, value: unknown): Promise<void>;
     exportFunctions(): Promise<string>;   // returns JSON string
     importFunctions(json: string): Promise<void>;
+    exportConfig?(): Promise<string>;     // AI + prompts portable JSON
+    importConfig?(json: string): Promise<void>;
   };
   popup: {
     resize(height: number): Promise<void>;
